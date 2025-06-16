@@ -74,9 +74,15 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    //  ICON            :
+    implementation(libs.androidx.material.icons.extended)
+
     //  KOTLINX         :
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.collections.immutable)
+
+    //  COIL            :
+    implementation(libs.coil3.compose)
 }
 
 publishing {
