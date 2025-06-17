@@ -14,3 +14,13 @@ val IntOffset.toIntOffsetData: IntOffsetData
 
 val IntOffsetData.toIntOffset: IntOffset
     get() = IntOffset(x = x, y = y)
+
+fun Offset.hasNeared(point: Offset, threshold: Float = 24.0F): Boolean {
+
+    return (this - point).getDistance() <= threshold
+}
+
+fun OffsetData.hasNeared(point: OffsetData, threshold: Float = 24.0F): Boolean {
+
+    return (this.toOffset - point.toOffset).getDistance() <= threshold
+}

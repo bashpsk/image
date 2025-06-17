@@ -257,6 +257,7 @@ fun TransformImageView(
                     }
                 ) { change, dragAmount ->
 
+                    change.consume()
                     dragSwipeMinimum += dragAmount
 
                     when {
