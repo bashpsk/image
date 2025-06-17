@@ -6,7 +6,7 @@ sealed interface KropResult {
 
     data object Init : KropResult
 
-    data class Failed(val message: String, val original: ImageBitmap) : KropResult
+    data class Failed(val message: String, val original: ImageBitmap?) : KropResult
 
     data class Success(val cropped: ImageBitmap, val original: ImageBitmap) : KropResult
 }
