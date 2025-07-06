@@ -1,8 +1,10 @@
 package io.bashpsk.imagekrop.crop
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.unit.IntSize
 
 internal fun DrawScope.drawHandle(
     corner: KropCorner,
@@ -130,4 +132,42 @@ private fun DrawScope.drawKropLine(
         color = kropConfig.handleColor,
         strokeWidth = kropConfig.handleStroke
     )
+}
+
+internal fun getCropRectWithAspect(
+    canvasSize: IntSize,
+    aspectRatio: KropAspectRatio,
+    paddingFraction: Float = 0.05F
+): Rect {
+
+    val canvasWidth = canvasSize.width.toFloat()
+    val canvasHeight = canvasSize.height.toFloat()
+
+    val availableWidth = canvasWidth * (1.0F - 2.0F * paddingFraction)
+    val availableHeight = canvasHeight * (1.0F - 2.0F * paddingFraction)
+
+    val desiredRatio = aspectRatio.widthRatio.toFloat() / aspectRatio.heightRatio.toFloat()
+
+    val targetWidth: Float
+    val targetHeight: Float
+
+    if (availableWidth / desiredRatio <= availableHeight) {
+
+        targetWidth = availableWidth
+        targetHeight = targetWidth / desiredRatio
+    } else {
+
+        targetHeight = availableHeight
+        targetWidth = targetHeight * desiredRatio
+    }
+
+    val centerX = canvasWidth / 2
+    val centerY = canvasHeight / 2
+
+    val left = centerX - targetWidth / 2
+    val top = centerY - targetHeight / 2
+    val right = centerX + targetWidth / 2
+    val bottom = centerY + targetHeight / 2
+
+    return Rect(topLeft = Offset(x = left, y = top), bottomRight = Offset(x = right, y = bottom))
 }

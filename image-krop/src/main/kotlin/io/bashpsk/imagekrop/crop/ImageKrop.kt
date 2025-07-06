@@ -16,6 +16,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,15 +56,12 @@ fun ImageKrop(
 
     val imageBitmapBroken = ImageBitmap.imageResource(id = R.drawable.image_broken)
 
-    val originalImageBitmap by remember(
-        imageBitmap,
-        imageBitmapBroken
-    ) {
+    val originalImageBitmap by remember(imageBitmap, imageBitmapBroken) {
         derivedStateOf { imageBitmap ?: imageBitmapBroken }
     }
 
-    var isRefreshing by remember { mutableStateOf(value = false) }
-    var modifiedImageBitmap by remember { mutableStateOf(value = originalImageBitmap) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    var modifiedImageBitmap by remember { mutableStateOf(originalImageBitmap) }
 
     val aspectRatio by remember(modifiedImageBitmap) {
         derivedStateOf { modifiedImageBitmap.width.toFloat() / modifiedImageBitmap.height }
@@ -90,9 +88,11 @@ fun ImageKrop(
         derivedStateOf { Offset(topRight.x, (topRight.y + bottomRight.y) / 2) }
     }
 
-    var kropCorner by remember { mutableStateOf<KropCorner?>(value = null) }
-    var isMovingCropRect by remember { mutableStateOf(value = false) }
-    var canvasSize by remember { mutableStateOf(value = IntSize.Zero) }
+    var kropCorner by remember { mutableStateOf<KropCorner?>(null) }
+    var selectedAspectRatio by remember { mutableStateOf(KropAspectRatio.Square) }
+    var isMovingCropRect by remember { mutableStateOf(false) }
+    var isAspectLocked by remember { mutableStateOf(true) }
+    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
 
     val rectSize by remember {
         derivedStateOf { Size(width = topRight.x - topLeft.x, height = bottomLeft.y - topLeft.y) }
@@ -100,8 +100,9 @@ fun ImageKrop(
 
     val threshold by remember(kropConfig) { derivedStateOf { kropConfig.handleThreshold } }
     val cropSizeLimit by remember(kropConfig) { derivedStateOf { kropConfig.minimumCropSize } }
+    val overlayColor = remember { Color.Black.copy(alpha = 0.5F) }
 
-    val rectPointerInput = Modifier.pointerInput(Unit) {
+    val cropPointerInputModifier = Modifier.pointerInput(Unit) {
 
         detectDragGestures(
             onDragStart = { offset ->
@@ -340,12 +341,22 @@ fun ImageKrop(
         )
     }
 
+    LaunchedEffect(canvasSize, selectedAspectRatio) {
+
+        val cropRect = getCropRectWithAspect(canvasSize, selectedAspectRatio)
+
+        topLeft = cropRect.topLeft
+        topRight = Offset(cropRect.right, cropRect.top)
+        bottomLeft = Offset(cropRect.left, cropRect.bottom)
+        bottomRight = cropRect.bottomRight
+    }
+
     Scaffold(
         modifier = modifier,
         topBar = {
 
             ImageKropTopBar(
-                modifier = Modifier.fillMaxWidth(fraction = 0.95F),
+                modifier = Modifier.fillMaxWidth(),
                 onRefreshing = { isVisible ->
 
                     isRefreshing = isVisible
@@ -373,6 +384,35 @@ fun ImageKrop(
         },
         bottomBar = {
 
+            ImageKropBottomBar(
+                modifier = Modifier.fillMaxWidth(),
+                selectedAspectRatio = selectedAspectRatio,
+                onKropAspectRatio = { aspect ->
+
+                    selectedAspectRatio = aspect
+                },
+                onRefreshing = { isVisible ->
+
+                    isRefreshing = isVisible
+                },
+                imageBitmap = imageBitmap,
+                onModifiedImage = { result ->
+
+                    modifiedImageBitmap = result
+                },
+                onImageKropDone = onImageKropDone,
+                canvasSize = canvasSize,
+                topLeft = topLeft,
+                bottomRight = bottomRight,
+                onUndoImageBitmap = {
+
+                    isRefreshing = true
+                    modifiedImageBitmap = originalImageBitmap
+                    isRefreshing = false
+                },
+                snackbarCoroutineScope = snackbarCoroutineScope,
+                snackbarHostState = snackbarHostState
+            )
         },
         snackbarHost = { snackbarHostState }
     ) { paddingValues ->
@@ -425,10 +465,42 @@ fun ImageKrop(
 
                             canvasSize = layoutCoordinates.size
                         }
-                        .then(rectPointerInput),
+                        .then(cropPointerInputModifier),
                     contentDescription = "Image Crop Gesture"
                 ) {
 
+                    // Top overlay
+                    drawRect(
+                        topLeft = Offset.Zero,
+                        color = overlayColor,
+                        size = Size(canvasSize.width.toFloat(), topLeft.y)
+                    )
+
+                    // Bottom overlay
+                    drawRect(
+                        topLeft = Offset(0f, bottomLeft.y),
+                        color = overlayColor,
+                        size = Size(
+                            canvasSize.width.toFloat(),
+                            canvasSize.height.toFloat() - bottomLeft.y
+                        )
+                    )
+
+                    // Left overlay
+                    drawRect(
+                        topLeft = Offset(0f, topLeft.y),
+                        color = overlayColor,
+                        size = Size(topLeft.x, rectSize.height)
+                    )
+
+                    // Right overlay
+                    drawRect(
+                        topLeft = Offset(topRight.x, topRight.y),
+                        color = overlayColor,
+                        size = Size(canvasSize.width.toFloat() - topRight.x, rectSize.height)
+                    )
+
+                    // Border
                     drawRect(
                         topLeft = topLeft,
                         size = rectSize,

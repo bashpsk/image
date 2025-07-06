@@ -1,21 +1,25 @@
 package io.bashpsk.imagekrop.crop
 
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.util.Log
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.IntSize
 import io.bashpsk.imagekrop.utils.LOG_TAG
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 fun ImageBitmap.getCroppedImageBitmap(
     cropRect: Rect,
-    canvasWidth: Float,
-    canvasHeight: Float
+    canvasSize: IntSize,
+    imageFlip: KropImageFlip? = null
 ): KropResult {
 
+    val canvasWidth = canvasSize.width.toFloat()
+    val canvasHeight = canvasSize.height.toFloat()
     val bitmapWidth = this@getCroppedImageBitmap.width.toFloat()
     val bitmapHeight = this@getCroppedImageBitmap.height.toFloat()
 
@@ -53,28 +57,45 @@ fun ImageBitmap.getCroppedImageBitmap(
 
     return try {
 
-        when {
+        if (cropWidth <= 1 || cropHeight <= 1) {
 
-            cropWidth <= 1 || cropHeight <= 1 -> {
+            val message = "Image Crop Size Too Small : $cropWidth x $cropHeight"
 
-                val message = "Image Crop Size Too Small : $cropWidth x $cropHeight"
+            Log.e(LOG_TAG, message)
+            KropResult.Failed(message = message, original = this)
+        } else {
 
-                Log.e(LOG_TAG, message)
-                KropResult.Failed(message = message, original = this@getCroppedImageBitmap)
+            val originalBitmap = this@getCroppedImageBitmap.asAndroidBitmap()
+
+            val matrix = Matrix().apply {
+
+                when (imageFlip) {
+
+                    KropImageFlip.LeftToRight, KropImageFlip.RightToLeft -> preScale(-1.0F, 1.0F)
+                    KropImageFlip.TopToBottom, KropImageFlip.BottomToTop -> preScale(1.0F, -1.0F)
+                    else -> Unit
+                }
             }
 
-            else -> {
+            val flippedBitmap = Bitmap.createBitmap(
+                originalBitmap,
+                0,
+                0,
+                originalBitmap.width,
+                originalBitmap.height,
+                matrix,
+                true
+            )
 
-                val croppedBitmap = Bitmap.createBitmap(
-                    this@getCroppedImageBitmap.asAndroidBitmap(),
-                    cropLeft,
-                    cropTop,
-                    cropWidth,
-                    cropHeight
-                ).asImageBitmap()
+            val croppedBitmap = Bitmap.createBitmap(
+                flippedBitmap,
+                cropLeft,
+                cropTop,
+                cropWidth,
+                cropHeight
+            ).asImageBitmap()
 
-                KropResult.Success(cropped = croppedBitmap, original = this@getCroppedImageBitmap)
-            }
+            KropResult.Success(cropped = croppedBitmap, original = this@getCroppedImageBitmap)
         }
     } catch (exception: Exception) {
 
