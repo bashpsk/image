@@ -1,10 +1,14 @@
 package io.bashpsk.imagekrop.crop
 
-enum class KropAspectRatio(val widthRatio: Int, val heightRatio: Int) {
+internal enum class KropAspectRatio(
+    val width: Int = 1,
+    val height: Int = 1,
+    val ratio: Float? = null
+) {
 
-    FreeForm(widthRatio = 0, heightRatio = 0),
-    Square(widthRatio = 1, heightRatio = 1),
-    Wide(widthRatio = 16, heightRatio = 9),
-    Portrait(widthRatio = 3, heightRatio = 4),
-    Landscape(widthRatio = 4, heightRatio = 3);
+    Square(width = 1, height = 1, ratio = 1F / 1F),
+    FourByThree(width = 4, height = 3, ratio = 4F / 3F),
+    ThreeByFour(width = 3, height = 4, ratio = 3F / 4F),
+    SixteenByNine(width = 16, height = 9, ratio = 16F / 9F),
+    NineBySixteen(width = 9, height = 16, ratio = 9F / 16F);
 }

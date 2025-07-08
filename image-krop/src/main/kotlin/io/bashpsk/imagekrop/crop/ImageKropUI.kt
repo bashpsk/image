@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Flip
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Preview
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.DropdownMenu
@@ -200,7 +202,7 @@ internal fun ImageKropTopBar(
 @Composable
 internal fun ImageKropBottomBar(
     modifier: Modifier = Modifier,
-    selectedAspectRatio: KropAspectRatio,
+    kropAspectRatio: KropAspectRatio,
     onKropAspectRatio: (aspect: KropAspectRatio) -> Unit,
     onRefreshing: (isVisible: Boolean) -> Unit,
     imageBitmap: ImageBitmap?,
@@ -212,13 +214,12 @@ internal fun ImageKropBottomBar(
     onUndoImageBitmap: () -> Unit,
     snackbarCoroutineScope: CoroutineScope,
     snackbarHostState: SnackbarHostState,
+    isAspectLocked: Boolean,
+    onAspectLocked: (isLocked: Boolean) -> Unit
 ) {
 
     var isAspectRatioMenuExpanded by remember { mutableStateOf(false) }
     var aspectRatioMenuPosition by remember { mutableStateOf(IntOffset.Zero) }
-
-    var currentHorizontalFlip by remember { mutableStateOf(KropImageFlip.LeftToRight) }
-    var currentVerticalFlip by remember { mutableStateOf(KropImageFlip.TopToBottom) }
 
     DropdownMenu(
 //        modifier = Modifier.offset { aspectRatioMenuPosition },
@@ -229,15 +230,29 @@ internal fun ImageKropBottomBar(
         }
     ) {
 
+        DropdownMenuItem(
+            text = {
+
+                Icon(
+                    imageVector = if (isAspectLocked) Icons.Filled.Lock else Icons.Filled.LockOpen,
+                    contentDescription = "Aspect Locked"
+                )
+            },
+            onClick = {
+
+                onAspectLocked(isAspectLocked.not())
+            }
+        )
+
         KropAspectRatio.entries.forEach { aspectRatio ->
 
-            val isSelected by remember { derivedStateOf { selectedAspectRatio == aspectRatio } }
+            val isSelected by remember { derivedStateOf { kropAspectRatio == aspectRatio } }
 
             DropdownMenuItem(
                 text = {
 
                     Text(
-                        text = "${aspectRatio.widthRatio}:${aspectRatio.heightRatio}",
+                        text = "${aspectRatio.width}:${aspectRatio.height}",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -267,17 +282,10 @@ internal fun ImageKropBottomBar(
 
                 onRefreshing(true)
 
-                val newFlip = if (currentHorizontalFlip == KropImageFlip.LeftToRight)
-                    KropImageFlip.RightToLeft
-                else
-                    KropImageFlip.LeftToRight
-
-                currentHorizontalFlip = newFlip
-
                 val kropResult = imageBitmap?.getCroppedImageBitmap(
                     cropRect = Rect(topLeft = topLeft, bottomRight = bottomRight),
                     canvasSize = canvasSize,
-                    imageFlip = currentHorizontalFlip
+                    imageFlip = KropImageFlip.Horizontal
                 ) ?: KropResult.Failed(message = "Image is Null.", original = null)
 
                 when (kropResult) {
@@ -313,13 +321,11 @@ internal fun ImageKropBottomBar(
                     }
                 }
 
-                currentHorizontalFlip = KropImageFlip.None
                 onRefreshing(false)
             }
         ) {
 
             Icon(
-                modifier = Modifier.rotate(currentHorizontalFlip.rotationAngleForHorizontal()),
                 imageVector = Icons.Filled.Flip,
                 contentDescription = "Flip Horizontal"
             )
@@ -330,17 +336,10 @@ internal fun ImageKropBottomBar(
 
                 onRefreshing(true)
 
-                val newFlip = if (currentVerticalFlip == KropImageFlip.TopToBottom)
-                    KropImageFlip.BottomToTop
-                else
-                    KropImageFlip.TopToBottom
-
-                currentVerticalFlip = newFlip
-
                 val kropResult = imageBitmap?.getCroppedImageBitmap(
                     cropRect = Rect(topLeft = topLeft, bottomRight = bottomRight),
                     canvasSize = canvasSize,
-                    imageFlip = currentVerticalFlip
+                    imageFlip = KropImageFlip.Vertical
                 ) ?: KropResult.Failed(message = "Image is Null.", original = null)
 
                 when (kropResult) {
@@ -376,13 +375,12 @@ internal fun ImageKropBottomBar(
                     }
                 }
 
-                currentVerticalFlip = KropImageFlip.None
                 onRefreshing(false)
             }
         ) {
 
             Icon(
-                modifier = Modifier.rotate(currentVerticalFlip.rotationAngleForVertical()),
+                modifier = Modifier.rotate(degrees = 90.0F),
                 imageVector = Icons.Filled.Flip,
                 contentDescription = "Flip Vertical"
             )

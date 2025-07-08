@@ -146,7 +146,7 @@ internal fun getCropRectWithAspect(
     val availableWidth = canvasWidth * (1.0F - 2.0F * paddingFraction)
     val availableHeight = canvasHeight * (1.0F - 2.0F * paddingFraction)
 
-    val desiredRatio = aspectRatio.widthRatio.toFloat() / aspectRatio.heightRatio.toFloat()
+    val desiredRatio = aspectRatio.ratio ?: (canvasWidth / canvasHeight)
 
     val targetWidth: Float
     val targetHeight: Float
