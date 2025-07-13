@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.unit.dp
 import io.bashpsk.imagekrop.crop.ImageKrop
 import io.bashpsk.imagekrop.crop.KropConfig
 import io.bashpsk.imagekrop.crop.KropResult
@@ -57,7 +58,7 @@ fun ImageCropDemoScreen() {
     ) {
         derivedStateOf {
             KropConfig(
-                minimumCropSize = 300.0F,
+                minimumCropSize = 100.dp,
                 handleColor = handleColor,
                 targetColor = targetColor,
                 borderColor = borderColor,
@@ -74,6 +75,7 @@ fun ImageCropDemoScreen() {
             KropShape.Star,
             KropShape.Triangle,
             KropShape.Pentagon,
+            KropShape.Hexagon,
         )
     }
 

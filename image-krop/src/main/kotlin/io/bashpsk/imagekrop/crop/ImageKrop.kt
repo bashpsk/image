@@ -26,18 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.ClipOp
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
 import io.bashpsk.imagekrop.R
 import io.bashpsk.imagekrop.offset.hasNeared
 import kotlinx.collections.immutable.ImmutableList
@@ -55,6 +50,7 @@ fun ImageKrop(
     onNavigateBack: () -> Unit = {}
 ) {
 
+    val density = LocalDensity.current
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarCoroutineScope = rememberCoroutineScope()
     val imagePreviewSheetState = rememberModalBottomSheetState()
@@ -104,9 +100,15 @@ fun ImageKrop(
         derivedStateOf { Size(width = topRight.x - topLeft.x, height = bottomLeft.y - topLeft.y) }
     }
 
-    val threshold by remember(kropConfig) { derivedStateOf { kropConfig.handleThreshold } }
-    val cropSizeLimit by remember(kropConfig) { derivedStateOf { kropConfig.minimumCropSize } }
-    val overlayColor = remember { Color.Black.copy(alpha = 0.5F) }
+    val threshold by remember(kropConfig, density) {
+        derivedStateOf {
+            maxOf(kropConfig.handleWidth, kropConfig.handleHeight).toPixel(density = density)
+        }
+    }
+
+    val cropSizeLimit by remember(kropConfig, density) {
+        derivedStateOf { kropConfig.minimumCropSize.toPixel(density = density) }
+    }
 
     val pointerInputWithoutAspect = Modifier.pointerInput(Unit) {
 
@@ -408,7 +410,7 @@ fun ImageKrop(
                             else -> return@detectDragGestures
                         }
 
-                        calculateNewRect(
+                        calculateNewCropRect(
                             draggedCornerCurrent = draggedCornerCurrent,
                             anchorCorner = anchorCorner,
                             dragDelta = dragAmount,
@@ -837,7 +839,8 @@ fun ImageKrop(
 
                     isRefreshing = isVisible
                 },
-                imageBitmap = imageBitmap,
+                originalImageBitmap = originalImageBitmap,
+                modifiedImageBitmap = modifiedImageBitmap,
                 onModifiedImage = { result ->
 
                     modifiedImageBitmap = result
@@ -878,7 +881,7 @@ fun ImageKrop(
 
                     isRefreshing = isVisible
                 },
-                imageBitmap = imageBitmap,
+                originalImageBitmap = originalImageBitmap,
                 onModifiedImage = { result ->
 
                     modifiedImageBitmap = result
@@ -946,12 +949,24 @@ fun ImageKrop(
                 contentDescription = "Image Crop Gesture"
             ) {
 
-                // Border
-                drawRect(
+                drawKropOverlay(
+                    kropShape = kropShape,
                     topLeft = topLeft,
-                    size = rectSize,
-                    style = Stroke(width = 2.dp.toPx()),
-                    color = kropConfig.borderColor
+                    bottomRight = bottomRight,
+                    kropConfig = kropConfig
+                )
+
+                drawKropShapeBorder(
+                    kropShape = kropShape,
+                    topLeft = topLeft,
+                    bottomRight = bottomRight,
+                    kropConfig = kropConfig
+                )
+
+                drawKropBorder(
+                    topLeft = topLeft,
+                    rectSize = rectSize,
+                    kropConfig = kropConfig
                 )
 
                 drawPlus(
@@ -1007,24 +1022,6 @@ fun ImageKrop(
                     center = rightCenter,
                     kropConfig = kropConfig
                 )
-
-                val shapePath = findKropShapePath(
-                    kropShape = kropShape,
-                    width = bottomRight.x - topLeft.x,
-                    height = bottomRight.y - topLeft.y
-                )
-
-                translate(left = topLeft.x, top = topLeft.y) {
-
-                    clipPath(path = shapePath, clipOp = ClipOp.Difference) {
-
-                        drawRect(
-                            topLeft = Offset(x = -topLeft.x, y = -topLeft.y),
-                            size = size,
-                            color = kropConfig.overlayColor
-                        )
-                    }
-                }
             }
 
             if (isRefreshing) CircularProgressIndicator()

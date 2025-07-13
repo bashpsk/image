@@ -2,7 +2,6 @@ package io.bashpsk.imagekrop.view
 
 import android.os.Parcelable
 import androidx.compose.runtime.Immutable
-import io.bashpsk.imagekrop.offset.OffsetData
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
@@ -12,5 +11,6 @@ import kotlinx.serialization.Serializable
 data class ImageTransformData(
     val zoom: Float = 1.0F,
     val rotation: Int = 0,
-    val position: OffsetData = OffsetData()
+    val positionX: Float = 0.0F,
+    val positionY: Float = 0.0F,
 ) : Parcelable

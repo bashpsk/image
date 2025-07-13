@@ -31,9 +31,6 @@ import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.SubcomposeAsyncImage
-import io.bashpsk.imagekrop.offset.OffsetData
-import io.bashpsk.imagekrop.offset.toOffset
-import io.bashpsk.imagekrop.offset.toOffsetData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
@@ -100,11 +97,15 @@ fun TransformImageView(
                         else -> zoomRange.endInclusive
                     }
 
-                    val newPan = (transformData().position.toOffset + panChange).toOffsetData
+                    val newPan = Offset(
+                        x = transformData().positionX,
+                        y = transformData().positionY
+                    ) + panChange
 
                     val newTransformData = transformData().copy(
                         zoom = newZoom,
-                        position = newPan
+                        positionX = newPan.x,
+                        positionY = newPan.y
                     )
 
                     onTransformDataChange(newTransformData)
@@ -119,12 +120,17 @@ fun TransformImageView(
 
                 TransformImageGesture.ROTATION -> {
 
-                    val newPan = (transformData().position.toOffset + panChange).toOffsetData
+                    val newPan = Offset(
+                        x = transformData().positionX,
+                        y = transformData().positionY
+                    ) + panChange
+                    
                     val newRotation = (transformData().rotation + rotationChange).toInt()
 
                     val newTransformData = transformData().copy(
                         rotation = newRotation.coerceIn(0..360),
-                        position = newPan
+                        positionX = newPan.x,
+                        positionY = newPan.y
                     )
 
                     onTransformDataChange(newTransformData)
@@ -158,8 +164,15 @@ fun TransformImageView(
 
                 TransformImageGesture.PAN -> {
 
-                    val newPan = (transformData().position.toOffset + panChange).toOffsetData
-                    val newTransformData = transformData().copy(position = newPan)
+                    val newPan = Offset(
+                        x = transformData().positionX,
+                        y = transformData().positionY
+                    ) + panChange
+
+                    val newTransformData = transformData().copy(
+                        positionX = newPan.x,
+                        positionY = newPan.y
+                    )
 
                     onTransformDataChange(newTransformData)
                     gestureCoroutineScope.coroutineContext.cancelChildren()
@@ -223,7 +236,8 @@ fun TransformImageView(
 
                         val newTransformData = transformData().copy(
                             zoom = zoomFactor,
-                            position = OffsetData()
+                            positionX = 0.0F,
+                            positionY = 0.0F
                         )
 
                         onTransformDataChange(newTransformData)
@@ -323,8 +337,8 @@ fun TransformImageView(
                 .graphicsLayer(
                     scaleX = transformData().zoom.coerceIn(range = zoomRange),
                     scaleY = transformData().zoom.coerceIn(range = zoomRange),
-                    translationX = transformData().position.x,
-                    translationY = transformData().position.y,
+                    translationX = transformData().positionX,
+                    translationY = transformData().positionY,
                     rotationZ = transformData().rotation.toFloat()
                 ),
             model = imageModel(),

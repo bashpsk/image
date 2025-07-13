@@ -348,3 +348,8 @@ internal fun createStarPath(rect: Rect): Path {
 
     return path
 }
+
+fun ImageBitmap.sameAs(other: ImageBitmap): Boolean {
+
+    return this.asAndroidBitmap().sameAs(other.asAndroidBitmap())
+}
