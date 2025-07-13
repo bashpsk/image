@@ -1,5 +1,5 @@
 [versions]
-agp = "8.11.0"
+agp = "8.11.1"
 kotlin = "2.2.0"
 core-ktx = "1.16.0"
 junit = "4.13.2"
@@ -11,7 +11,7 @@ compose-bom = "2025.06.01"
 material-icons = "1.7.8"
 kotlinx-serialization-json = "1.9.0"
 kotlinx-collections-immutable = "0.4.0"
-kotlinx-datetime = "0.7.0"
+kotlinx-datetime = "0.7.1"
 empty-format = "1.0.5"
 coil-kt = "3.2.0"
 
