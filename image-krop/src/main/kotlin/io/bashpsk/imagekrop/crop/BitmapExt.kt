@@ -32,7 +32,7 @@ fun ImageBitmap.getCroppedImageBitmap(
     cropRect: Rect,
     canvasSize: IntSize,
     imageFlip: KropImageFlip? = null,
-    kropShape: KropShape = KropShape.Star
+    kropShape: KropShape = KropShape.SharpeCorner
 ): KropResult {
 
     val sourceImageBitmap = this@getCroppedImageBitmap
@@ -219,54 +219,13 @@ fun bitmapShapeMask(
         config = ImageBitmapConfig.Argb8888
     )
 
-    val rect = Rect(left = 0.0F, top = 0.0F, right = width.toFloat(), bottom = height.toFloat())
-    val cornerRadius = CornerRadius(x = 40.0F, y = 40.0F)
-
     Canvas(image = outputImageBitmap).apply {
 
-        val shapePath = Path().apply {
-
-            when (kropShape) {
-
-                KropShape.Circle -> addOval(rect)
-
-                KropShape.RoundedCorner -> addRoundRect(
-                    RoundRect(rect = rect, cornerRadius = cornerRadius)
-                )
-
-                KropShape.CutCorner -> {
-
-                    val cut = 48.0F
-
-                    moveTo(rect.left + cut, rect.top)
-                    lineTo(rect.right - cut, rect.top)
-                    lineTo(rect.right, rect.top + cut)
-                    lineTo(rect.right, rect.bottom - cut)
-                    lineTo(rect.right - cut, rect.bottom)
-                    lineTo(rect.left + cut, rect.bottom)
-                    lineTo(rect.left, rect.bottom - cut)
-                    lineTo(rect.left, rect.top + cut)
-                    close()
-                }
-
-                KropShape.Triangle -> {
-
-                    moveTo(rect.center.x, rect.top)
-                    lineTo(rect.right, rect.bottom)
-                    lineTo(rect.left, rect.bottom)
-                    close()
-                }
-
-                KropShape.Star -> addPath(createStarPath(rect))
-                KropShape.Pentagon -> addPath(createPolygonPath(rect, sides = 5))
-                KropShape.Hexagon -> addPath(createPolygonPath(rect, sides = 6))
-                KropShape.Heptagon -> addPath(createPolygonPath(rect, sides = 7))
-                KropShape.Octagon -> addPath(createPolygonPath(rect, sides = 8))
-                KropShape.Nonagon -> addPath(createPolygonPath(rect, sides = 9))
-                KropShape.Decagon -> addPath(createPolygonPath(rect, sides = 10))
-                KropShape.SharpeCorner -> addRect(rect)
-            }
-        }
+        val shapePath = findKropShapePath(
+            kropShape = kropShape,
+            width = width.toFloat(),
+            height = height.toFloat()
+        )
 
         val paint = Paint().apply {
 
@@ -283,7 +242,67 @@ fun bitmapShapeMask(
     return outputImageBitmap
 }
 
-private fun createPolygonPath(rect: Rect, sides: Int): Path {
+internal fun findKropShapePath(
+    kropShape: KropShape,
+    width: Float,
+    height: Float,
+    radiusSize: Float = 0.05F
+): Path {
+
+    val rect = Rect(left = 0.0F, top = 0.0F, right = width, bottom = height)
+
+    return Path().apply {
+
+        when (kropShape) {
+
+            KropShape.Circle -> addOval(oval = rect)
+
+            KropShape.RoundedCorner -> {
+
+                val cornerRadius = CornerRadius(
+                    x = width * radiusSize,
+                    y = height * radiusSize
+                )
+
+                addRoundRect(RoundRect(rect = rect, cornerRadius = cornerRadius))
+            }
+
+            KropShape.CutCorner -> {
+
+                val cut = minOf(width, height) * radiusSize
+
+                moveTo(rect.left + cut, rect.top)
+                lineTo(rect.right - cut, rect.top)
+                lineTo(rect.right, rect.top + cut)
+                lineTo(rect.right, rect.bottom - cut)
+                lineTo(rect.right - cut, rect.bottom)
+                lineTo(rect.left + cut, rect.bottom)
+                lineTo(rect.left, rect.bottom - cut)
+                lineTo(rect.left, rect.top + cut)
+                close()
+            }
+
+            KropShape.Triangle -> {
+
+                moveTo(rect.center.x, rect.top)
+                lineTo(rect.right, rect.bottom)
+                lineTo(rect.left, rect.bottom)
+                close()
+            }
+
+            KropShape.Star -> addPath(createStarPath(rect))
+            KropShape.Pentagon -> addPath(createPolygonPath(rect, sides = 5))
+            KropShape.Hexagon -> addPath(createPolygonPath(rect, sides = 6))
+            KropShape.Heptagon -> addPath(createPolygonPath(rect, sides = 7))
+            KropShape.Octagon -> addPath(createPolygonPath(rect, sides = 8))
+            KropShape.Nonagon -> addPath(createPolygonPath(rect, sides = 9))
+            KropShape.Decagon -> addPath(createPolygonPath(rect, sides = 10))
+            KropShape.SharpeCorner -> addRect(rect)
+        }
+    }
+}
+
+internal fun createPolygonPath(rect: Rect, sides: Int): Path {
 
     val path = Path()
     val radius = min(rect.width, rect.height) / 2
@@ -306,7 +325,7 @@ private fun createPolygonPath(rect: Rect, sides: Int): Path {
     return path
 }
 
-private fun createStarPath(rect: Rect): Path {
+internal fun createStarPath(rect: Rect): Path {
 
     val path = Path()
     val centerX = rect.center.x

@@ -13,5 +13,6 @@ data class KropConfig(
     val borderColor: Color = Color.Cyan,
     val targetSize: Float = 40.0F,
     val targetStroke: Float = 6.0F,
-    val targetColor: Color = Color.Yellow
+    val targetColor: Color = Color.Yellow,
+    val overlayColor: Color = Color.Black.copy(alpha = 0.5F),
 )

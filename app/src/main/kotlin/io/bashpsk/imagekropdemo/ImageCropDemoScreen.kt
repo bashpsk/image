@@ -28,8 +28,10 @@ import androidx.compose.ui.res.imageResource
 import io.bashpsk.imagekrop.crop.ImageKrop
 import io.bashpsk.imagekrop.crop.KropConfig
 import io.bashpsk.imagekrop.crop.KropResult
+import io.bashpsk.imagekrop.crop.KropShape
 import io.bashpsk.imagekrop.view.ImageTransformData
 import io.bashpsk.imagekrop.view.TransformImageView
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun ImageCropDemoScreen() {
@@ -42,23 +44,37 @@ fun ImageCropDemoScreen() {
     var selectedImage by remember { mutableStateOf(imageBitmap) }
     var transformData by remember { mutableStateOf(value = ImageTransformData()) }
 
-    val handleColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val targetColor = MaterialTheme.colorScheme.inverseSurface
-    val borderColor = MaterialTheme.colorScheme.onErrorContainer
+    val handleColor = MaterialTheme.colorScheme.onSurface
+    val targetColor = MaterialTheme.colorScheme.surfaceTint
+    val borderColor = MaterialTheme.colorScheme.errorContainer
+    val overlayColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5F)
 
     val kropConfig by remember(
         handleColor,
         targetColor,
-        borderColor
+        borderColor,
+        overlayColor
     ) {
         derivedStateOf {
             KropConfig(
                 minimumCropSize = 300.0F,
                 handleColor = handleColor,
                 targetColor = targetColor,
-                borderColor = borderColor
+                borderColor = borderColor,
+                overlayColor = overlayColor
             )
         }
+    }
+
+    val kropShapeList = remember {
+        persistentListOf(
+            KropShape.SharpeCorner,
+            KropShape.RoundedCorner,
+            KropShape.CutCorner,
+            KropShape.Star,
+            KropShape.Triangle,
+            KropShape.Pentagon,
+        )
     }
 
     Scaffold(
@@ -82,6 +98,7 @@ fun ImageCropDemoScreen() {
                     is KropResult.Success -> (kropResult as KropResult.Success).cropped
                 },
                 kropConfig = kropConfig,
+                kropShapeList = kropShapeList,
                 onImageKropDone = { result ->
 
                     kropResult = result
