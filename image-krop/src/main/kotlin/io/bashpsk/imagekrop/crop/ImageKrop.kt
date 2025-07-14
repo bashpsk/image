@@ -1,11 +1,10 @@
 package io.bashpsk.imagekrop.crop
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,10 +22,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onPlaced
@@ -63,10 +64,6 @@ fun ImageKrop(
 
     var isRefreshing by remember { mutableStateOf(false) }
     var modifiedImageBitmap by remember { mutableStateOf(originalImageBitmap) }
-
-    val modifiedBitmapRatio by remember(modifiedImageBitmap) {
-        derivedStateOf { modifiedImageBitmap.width.toFloat() / modifiedImageBitmap.height }
-    }
 
     var topLeft by remember { mutableStateOf(Offset.Zero) }
     var topRight by remember { mutableStateOf(Offset.Zero) }
@@ -516,7 +513,6 @@ fun ImageKrop(
                         val currentHeight = bottomRight.y - topLeft.y
                         val currentWidth = bottomRight.x - topLeft.x
 
-
                         var newHeight = (bottomRight.y - potentialNewTopY).coerceAtLeast(
                             cropSizeLimit
                         )
@@ -712,6 +708,88 @@ fun ImageKrop(
 
         true -> pointerInputWithAspect
         false -> pointerInputWithoutAspect
+    }
+
+    val cropCanvasModifier = Modifier.drawWithContent {
+
+        drawContent()
+
+        drawIntoCanvas {
+
+            drawKropOverlay(
+                kropShape = kropShape,
+                topLeft = topLeft,
+                bottomRight = bottomRight,
+                kropConfig = kropConfig
+            )
+
+            drawKropShapeBorder(
+                kropShape = kropShape,
+                topLeft = topLeft,
+                bottomRight = bottomRight,
+                kropConfig = kropConfig
+            )
+
+            drawKropBorder(
+                topLeft = topLeft,
+                rectSize = rectSize,
+                kropConfig = kropConfig
+            )
+
+            drawPlus(
+                topLeft = topLeft,
+                rectSize = rectSize,
+                kropConfig = kropConfig
+            )
+
+            drawHandle(
+                corner = KropCorner.TOP_LEFT,
+                center = topLeft,
+                kropConfig = kropConfig
+            )
+
+            drawHandle(
+                corner = KropCorner.TOP_RIGHT,
+                center = topRight,
+                kropConfig = kropConfig
+            )
+
+            drawHandle(
+                corner = KropCorner.BOTTOM_LEFT,
+                center = bottomLeft,
+                kropConfig = kropConfig
+            )
+
+            drawHandle(
+                corner = KropCorner.BOTTOM_RIGHT,
+                center = bottomRight,
+                kropConfig = kropConfig
+            )
+
+            drawHandle(
+                corner = KropCorner.TOP_CENTRE,
+                center = topCenter,
+                kropConfig = kropConfig
+            )
+
+            drawHandle(
+                corner = KropCorner.BOTTOM_CENTRE,
+                center = bottomCenter,
+                kropConfig = kropConfig
+            )
+
+            drawHandle(
+                corner = KropCorner.LEFT_CENTRE,
+                center = leftCenter,
+                kropConfig = kropConfig
+            )
+
+            drawHandle(
+                corner = KropCorner.RIGHT_CENTRE,
+                center = rightCenter,
+                kropConfig = kropConfig
+            )
+        }
     }
 
     LaunchedEffect(canvasSize, originalImageBitmap, kropAspectRatio, isAspectLocked) {
@@ -916,15 +994,13 @@ fun ImageKrop(
 
         BoxWithConstraints(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(paddingValues = paddingValues),
             contentAlignment = Alignment.Center
         ) {
 
             Image(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(ratio = modifiedBitmapRatio)
                     .onPlaced { layoutCoordinates ->
 
                         val imageWidth = layoutCoordinates.size.width.toFloat()
@@ -934,95 +1010,14 @@ fun ImageKrop(
                         topRight = Offset(imageWidth * 0.95F, imageHeight * 0.05F)
                         bottomLeft = Offset(imageWidth * 0.05F, imageHeight * 0.95F)
                         bottomRight = Offset(imageWidth * 0.95F, imageHeight * 0.95F)
-                    },
+                        canvasSize = layoutCoordinates.size
+                    }
+                    .then(pointerInputModifier)
+                    .then(cropCanvasModifier),
                 bitmap = modifiedImageBitmap,
                 contentScale = ContentScale.Fit,
                 contentDescription = "Image View"
             )
-
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(ratio = modifiedBitmapRatio)
-                    .onPlaced { layoutCoordinates -> canvasSize = layoutCoordinates.size }
-                    .then(pointerInputModifier),
-                contentDescription = "Image Crop Gesture"
-            ) {
-
-                drawKropOverlay(
-                    kropShape = kropShape,
-                    topLeft = topLeft,
-                    bottomRight = bottomRight,
-                    kropConfig = kropConfig
-                )
-
-                drawKropShapeBorder(
-                    kropShape = kropShape,
-                    topLeft = topLeft,
-                    bottomRight = bottomRight,
-                    kropConfig = kropConfig
-                )
-
-                drawKropBorder(
-                    topLeft = topLeft,
-                    rectSize = rectSize,
-                    kropConfig = kropConfig
-                )
-
-                drawPlus(
-                    topLeft = topLeft,
-                    rectSize = rectSize,
-                    kropConfig = kropConfig
-                )
-
-                drawHandle(
-                    corner = KropCorner.TOP_LEFT,
-                    center = topLeft,
-                    kropConfig = kropConfig
-                )
-
-                drawHandle(
-                    corner = KropCorner.TOP_RIGHT,
-                    center = topRight,
-                    kropConfig = kropConfig
-                )
-
-                drawHandle(
-                    corner = KropCorner.BOTTOM_LEFT,
-                    center = bottomLeft,
-                    kropConfig = kropConfig
-                )
-
-                drawHandle(
-                    corner = KropCorner.BOTTOM_RIGHT,
-                    center = bottomRight,
-                    kropConfig = kropConfig
-                )
-
-                drawHandle(
-                    corner = KropCorner.TOP_CENTRE,
-                    center = topCenter,
-                    kropConfig = kropConfig
-                )
-
-                drawHandle(
-                    corner = KropCorner.BOTTOM_CENTRE,
-                    center = bottomCenter,
-                    kropConfig = kropConfig
-                )
-
-                drawHandle(
-                    corner = KropCorner.LEFT_CENTRE,
-                    center = leftCenter,
-                    kropConfig = kropConfig
-                )
-
-                drawHandle(
-                    corner = KropCorner.RIGHT_CENTRE,
-                    center = rightCenter,
-                    kropConfig = kropConfig
-                )
-            }
 
             if (isRefreshing) CircularProgressIndicator()
         }

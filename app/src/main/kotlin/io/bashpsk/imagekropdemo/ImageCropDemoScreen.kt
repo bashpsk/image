@@ -1,5 +1,6 @@
 package io.bashpsk.imagekropdemo
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -19,11 +20,13 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
 import io.bashpsk.imagekrop.crop.ImageKrop
@@ -33,11 +36,15 @@ import io.bashpsk.imagekrop.crop.KropShape
 import io.bashpsk.imagekrop.view.ImageTransformData
 import io.bashpsk.imagekrop.view.TransformImageView
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.launch
 
 @Composable
 fun ImageCropDemoScreen() {
 
-    val imageBitmap = ImageBitmap.imageResource(R.drawable.wallpaper)
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    val imageBitmap = ImageBitmap.imageResource(R.drawable.wallpaper02)
 
     var isImageEdit by remember { mutableStateOf(value = false) }
     var kropResult by remember { mutableStateOf<KropResult>(value = KropResult.Init) }
@@ -72,6 +79,7 @@ fun ImageCropDemoScreen() {
             KropShape.SharpeCorner,
             KropShape.RoundedCorner,
             KropShape.CutCorner,
+            KropShape.Circle,
             KropShape.Star,
             KropShape.Triangle,
             KropShape.Pentagon,
@@ -145,6 +153,29 @@ fun ImageCropDemoScreen() {
                 ) {
 
                     Text("Edit Image")
+                }
+
+                Button(
+                    enabled = kropResult is KropResult.Success,
+                    onClick = {
+
+                        coroutineScope.launch {
+
+                            (kropResult as KropResult.Success).cropped.saveAsFile(
+                                name = "PSK"
+                            ).let { file ->
+
+                                Toast.makeText(
+                                    context,
+                                    if (file?.exists() == true) "Image Saved" else "Failed",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }
+                ) {
+
+                    Text("Save Image")
                 }
             }
         }
