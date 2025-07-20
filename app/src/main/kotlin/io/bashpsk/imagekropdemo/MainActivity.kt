@@ -18,7 +18,8 @@ class MainActivity : ComponentActivity() {
             ImageKropTheme {
 
 //                TransformImageDemoScreen()
-                ImageCropDemoScreen()
+//                ImageCropDemoScreen()
+                ImageColorFilterDemoScreen()
             }
         }
     }
