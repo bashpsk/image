@@ -195,7 +195,6 @@ fun ImageBitmap.getCroppedImageBitmap(
 
                 KropImageFlip.Horizontal -> matrix.preScale(FLIP_HORIZONTAL_SCALE, IDENTITY_SCALE)
                 KropImageFlip.Vertical -> matrix.preScale(IDENTITY_SCALE, FLIP_VERTICAL_SCALE)
-                else -> Unit
             }
 
             if (matrix.isIdentity.not()) {

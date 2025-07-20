@@ -42,7 +42,7 @@ fun ImageKolor(
             KolorFilterView(
                 modifier = Modifier.fillMaxWidth(),
                 kolorFilter = { kolorFilter },
-                imageModel = { R.drawable.flower_01 },
+                imageModel = { R.drawable.flower_02 },
                 isSelected = { isSelected },
                 onFilterClick = onFilterClick
             )

@@ -81,7 +81,7 @@ fun KolorFilterView(
                         color = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.65F),
                         shape = MaterialTheme.shapes.extraSmall
                     )
-                    .padding(vertical = 4.dp, horizontal = 4.dp),
+                    .padding(vertical = 4.dp, horizontal = 8.dp),
                 text = kolorFilter().label,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.inverseSurface,

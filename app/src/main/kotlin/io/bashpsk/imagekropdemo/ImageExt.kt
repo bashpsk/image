@@ -21,13 +21,13 @@ internal suspend fun ImageBitmap.saveAsFile(name: String): File? = withContext(D
 
     if (PictureDirectory.exists().not()) PictureDirectory.mkdirs()
 
-    val file = File(PictureDirectory, "$name.png")
+    val file = File(PictureDirectory, "$name.jpg")
 
     return@withContext try {
 
         val outputStream = FileOutputStream(file)
 
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
         outputStream.flush()
         outputStream.close()
         file
