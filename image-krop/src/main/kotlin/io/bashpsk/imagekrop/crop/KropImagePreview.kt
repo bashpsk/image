@@ -48,9 +48,17 @@ import io.bashpsk.imagekrop.view.TransformImageConfig
 import io.bashpsk.imagekrop.view.TransformImageView
 import kotlinx.coroutines.launch
 
+/**
+ * Composable function that displays a preview of the original and modified images in a modal bottom
+ * sheet.
+ *
+ * @param sheetState The state of the modal bottom sheet.
+ * @param originalImageBitmap The original image bitmap.
+ * @param modifiedImageBitmap The modified image bitmap.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun KropImagePreview(
+internal fun KropImagePreview(
     sheetState: SheetState,
     originalImageBitmap: ImageBitmap,
     modifiedImageBitmap: ImageBitmap,
@@ -158,6 +166,14 @@ fun KropImagePreview(
     }
 }
 
+/**
+ * A composable function that displays a button to toggle between showing the original and modified
+ * (cropped) images.
+ *
+ * @param isOriginalImage A boolean indicating whether the original image is currently displayed.
+ * @param onShowImageBitmap A callback function that is invoked when the button is clicked.
+ * It receives a boolean value indicating whether the original image should be shown.
+ */
 @Composable
 private fun ImageCompareButton(
     isOriginalImage: Boolean,

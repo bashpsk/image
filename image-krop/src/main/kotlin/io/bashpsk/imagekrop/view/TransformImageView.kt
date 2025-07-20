@@ -38,6 +38,30 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * A Composable that displays an image with support for various transformations like
+ * zoom, pan, rotation, and swipe gestures.
+ *
+ * @param modifier The modifier to be applied to the layout.
+ * @param imageModel A lambda that returns the image model to be displayed. This can be a URL,
+ * a local file path, or any other model supported by Coil.
+ * @param zoomRange The allowable range for zooming the image. Defaults to `0.4F..8.0F`.
+ * @param transformData A lambda that returns the current [ImageTransformData] which holds
+ * the state of zoom, pan, and rotation. Defaults to a new [ImageTransformData] instance.
+ * @param onTransformDataChange A lambda that is invoked when the [ImageTransformData] changes
+ * due to user gestures. It receives the updated [ImageTransformData].
+ * @param onLeftSwipe A lambda that is invoked when a left swipe gesture is detected.
+ * @param onRightSwipe A lambda that is invoked when a right swipe gesture is detected.
+ * @param onClick A lambda that is invoked when the image is clicked. It receives the [Offset]
+ * of the click.
+ * @param onLongClick A lambda that is invoked when the image is long-clicked. It receives the
+ * [Offset] of the long click.
+ * @param transformConfig A lambda that returns the [TransformImageConfig] which controls
+ * the enabled gestures (zoom, pan, rotation, swipe). Defaults to a new [TransformImageConfig]
+ * instance with all gestures enabled.
+ * @param contentScale The scaling to be applied to the image when displayed.
+ * Defaults to [ContentScale.Fit].
+ */
 @Composable
 fun TransformImageView(
     modifier: Modifier = Modifier,
@@ -374,6 +398,16 @@ fun TransformImageView(
     }
 }
 
+/**
+ * Enum class representing the possible gestures for transforming an image.
+ *
+ * [INIT] - Initial state, no gesture is active.
+ * [PAN] - Panning gesture, moving the image around.
+ * [ZOOM] - Zooming gesture, scaling the image up or down.
+ * [ROTATION] - Rotation gesture, rotating the image.
+ * [LEFT_SWIPE] - Left swipe gesture.
+ * [RIGHT_SWIPE] - Right swipe gesture.
+ */
 private enum class TransformImageGesture {
 
     INIT,

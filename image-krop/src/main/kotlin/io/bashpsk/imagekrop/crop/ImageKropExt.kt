@@ -11,11 +11,14 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.dp
 
-internal fun DrawScope.drawHandle(
-    corner: KropCorner,
-    center: Offset,
-    kropConfig: KropConfig
-) {
+/**
+ * Draws a handle for a specific corner of the crop selection.
+ *
+ * @param corner The [KropCorner] for which to draw the handle.
+ * @param center The center [Offset] of the handle.
+ * @param kropConfig The [KropConfig] to use for styling the handle.
+ */
+internal fun DrawScope.drawHandle(corner: KropCorner, center: Offset, kropConfig: KropConfig) {
 
     val handleLength = when (corner) {
 
@@ -106,6 +109,19 @@ internal fun DrawScope.drawHandle(
     }
 }
 
+/**
+ * Draws a plus (+) symbol centered within the specified rectangle.
+ *
+ * This function is used to indicate the center of the crop area or a target point.
+ * The appearance of the plus symbol (size, color, thickness) is determined by the
+ * [KropConfig].
+ *
+ * @param topLeft The [Offset] representing the top-left corner of the rectangle within which the
+ * plus symbol will be drawn.
+ * @param rectSize The [Size] of the rectangle. The plus symbol will be centered within this size.
+ * @param kropConfig The [KropConfig] object that defines the visual properties of the plus symbol,
+ * such as its size, color, and thickness.
+ */
 internal fun DrawScope.drawPlus(
     topLeft: Offset,
     rectSize: Size,
@@ -132,11 +148,18 @@ internal fun DrawScope.drawPlus(
     )
 }
 
-internal fun DrawScope.drawKropBorder(
-    topLeft: Offset,
-    rectSize: Size,
-    kropConfig: KropConfig
-) {
+/**
+ * Draws a rectangular border for the cropping area.
+ *
+ * This function is an extension function for `DrawScope` and is used to draw the visual boundary of
+ * the crop selection.
+ *
+ * @param topLeft The [Offset] representing the top-left corner of the border.
+ * @param rectSize The [Size] of the rectangle to be drawn.
+ * @param kropConfig The [KropConfig] object containing styling parameters for the border, such as
+ * thickness and color.
+ */
+internal fun DrawScope.drawKropBorder(topLeft: Offset, rectSize: Size, kropConfig: KropConfig) {
 
     drawRect(
         topLeft = topLeft,
@@ -146,6 +169,18 @@ internal fun DrawScope.drawKropBorder(
     )
 }
 
+/**
+ * Draws the overlay outside the cropping shape.
+ *
+ * This function creates a visual effect where the area outside the selected cropping shape is
+ * dimmed or colored, highlighting the area to be cropped.
+ *
+ * @param kropShape The shape of the cropping area (e.g., Rectangle, Oval).
+ * @param topLeft The top-left [Offset] of the cropping rectangle.
+ * @param bottomRight The bottom-right [Offset] of the cropping rectangle.
+ * @param kropConfig The [KropConfig] containing styling information for the overlay, such as the
+ * overlay color.
+ */
 internal fun DrawScope.drawKropOverlay(
     kropShape: KropShape,
     topLeft: Offset,
@@ -172,6 +207,14 @@ internal fun DrawScope.drawKropOverlay(
     }
 }
 
+/**
+ * Draws the border of the krop shape.
+ *
+ * @param kropShape The [KropShape] to draw the border for.
+ * @param topLeft The top-left [Offset] of the crop area.
+ * @param bottomRight The bottom-right [Offset] of the crop area.
+ * @param kropConfig The [KropConfig] containing styling for the border.
+ */
 internal fun DrawScope.drawKropShapeBorder(
     kropShape: KropShape,
     topLeft: Offset,
@@ -195,11 +238,18 @@ internal fun DrawScope.drawKropShapeBorder(
     }
 }
 
-private fun DrawScope.drawKropLine(
-    start: Offset,
-    end: Offset,
-    kropConfig: KropConfig
-) {
+/**
+ * Draws a single line segment for a crop handle.
+ *
+ * This is a helper function used by [drawHandle] to construct the visual representation of the crop
+ * handles.
+ *
+ * @param start The starting [Offset] of the line.
+ * @param end The ending [Offset] of the line.
+ * @param kropConfig The [KropConfig] containing styling information for the line, such as color and
+ * thickness.
+ */
+private fun DrawScope.drawKropLine(start: Offset, end: Offset, kropConfig: KropConfig) {
 
     drawLine(
         start = start,
@@ -210,6 +260,15 @@ private fun DrawScope.drawKropLine(
     )
 }
 
+/**
+ * Draws a preview of the krop shape.
+ *
+ * This function is used to display a visual representation of the selected crop shape.
+ * It takes a [KropShape] and a [Color] as input and draws the shape's path with a stroke style.
+ *
+ * @param kropShape The [KropShape] to draw.
+ * @param shapeColor The [Color] to use for drawing the shape's path.
+ */
 internal fun DrawScope.drawKropShapePreview(kropShape: KropShape, shapeColor: Color) {
 
     val shapePath = findKropShapePath(
@@ -403,7 +462,7 @@ internal fun calculateNewCropRect(
     }
 
     return Pair(
-        Offset(clampedTopLeftX, clampedTopLeftY),
-        Offset(clampedBottomRightX, clampedBottomRightY)
+        first = Offset(x = clampedTopLeftX, y = clampedTopLeftY),
+        second = Offset(x = clampedBottomRightX, y = clampedBottomRightY)
     )
 }

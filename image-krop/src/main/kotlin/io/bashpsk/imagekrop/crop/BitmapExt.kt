@@ -23,11 +23,64 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
+/**
+ * Constant value used for flipping an image horizontally.
+ * This scale factor (-1.0F) is applied to the x-axis to mirror the image.
+ */
 private const val FLIP_HORIZONTAL_SCALE = -1.0F
+
+/**
+ * Constant value used for flipping an image vertically.
+ * This scale factor (-1.0F) inverts the Y-axis of the image,
+ * effectively creating a mirror image across the horizontal axis.
+ */
 private const val FLIP_VERTICAL_SCALE = -1.0F
+
+/**
+ * Represents the identity scale factor, used for no scaling.
+ */
 private const val IDENTITY_SCALE = 1.0F
+
+/**
+ * Minimum dimension for the cropped image in pixels.
+ * This is used to prevent creating a bitmap with zero or negative dimensions, which would
+ * cause a crash.
+ */
 private const val MIN_CROP_DIMENSION_PX = 1
 
+/**
+ * Crops the [ImageBitmap] based on the provided [cropRect] and applies optional flipping and
+ * shaping.
+ *
+ * This function takes an [ImageBitmap] and crops it according to the [cropRect] specified in canvas
+ * coordinates. It also handles optional image flipping ([imageFlip]) and applies a shape mask
+ * ([kropShape]) to the cropped image.
+ *
+ * The process involves:
+ * 1. Validating the input parameters (canvas size, source image size, crop rectangle dimensions).
+ * 2. Calculating the scaling factor and offsets to transform canvas coordinates to bitmap
+ * coordinates.
+ * 3. Transforming the crop rectangle coordinates from canvas space to bitmap space.
+ * 4. Validating and adjusting the crop dimensions to ensure they are at least
+ * `MIN_CROP_DIMENSION_PX`.
+ * 5. If `imageFlip` is specified, the source bitmap is flipped accordingly (horizontally or
+ * vertically).
+ * 6. The bitmap is then cropped using the calculated bitmap coordinates and dimensions.
+ * 7. Finally, the `kropShape` is applied to the cropped bitmap, masking it to the desired shape.
+ *
+ * @param cropRect The rectangle defining the crop area in canvas coordinates.
+ * @param canvasSize The size of the canvas on which the image is displayed and the `cropRect` is
+ * defined.
+ * @param imageFlip An optional [KropImageFlip] value to flip the image horizontally or vertically
+ * before cropping. Defaults to `null` (no flip).
+ * @param kropShape The [KropShape] to apply to the cropped image. Defaults to
+ * [KropShape.SharpeCorner].
+ * @return A [KropResult] which is either:
+ *   - [KropResult.Success] containing the cropped and shaped [ImageBitmap] and the original
+ *   [ImageBitmap].
+ *   - [KropResult.Failed] containing an error message and the original [ImageBitmap] if any error
+ *   occurs during the process (e.g., invalid dimensions, out of memory).
+ */
 fun ImageBitmap.getCroppedImageBitmap(
     cropRect: Rect,
     canvasSize: IntSize,
@@ -191,6 +244,26 @@ fun ImageBitmap.getCroppedImageBitmap(
     }
 }
 
+/**
+ * Transforms a coordinate from the canvas's coordinate system to the bitmap's coordinate system.
+ *
+ * This function is essential for accurately mapping crop selections made on a scaled and offset
+ * canvas representation of an image back to the original image's pixel coordinates.
+ *
+ * @param canvasCoordinate The coordinate value on the canvas (e.g., x or y position of a crop
+ * handle).
+ * @param canvasOffset The offset of the displayed image on the canvas. This accounts for any
+ * padding
+ * or centering of the image within the canvas.
+ * @param scaleFactor The factor by which the original bitmap is scaled to fit the canvas.
+ * @param maxBitmapDimension The maximum dimension (width or height) of the original bitmap. This is
+ * used
+ * to ensure the transformed coordinate does not exceed the bitmap's boundaries.
+ * @return The transformed coordinate in the bitmap's pixel space, rounded to the nearest integer
+ * and
+ * coerced to be within the valid range [0, maxBitmapDimension]. If the `scaleFactor` is zero,
+ * it returns 0 to prevent division by zero errors.
+ */
 private fun transformToBitmapCoordinate(
     canvasCoordinate: Float,
     canvasOffset: Float,
@@ -205,10 +278,17 @@ private fun transformToBitmapCoordinate(
     )
 }
 
-fun bitmapShapeMask(
-    imageBitmap: ImageBitmap,
-    kropShape: KropShape
-): ImageBitmap {
+/**
+ * Applies a shape mask to an [ImageBitmap].
+ *
+ * This function takes an [ImageBitmap] and a [KropShape] and returns a new [ImageBitmap]
+ * where the original image is clipped to the specified shape.
+ *
+ * @param imageBitmap The input [ImageBitmap] to be masked.
+ * @param kropShape The [KropShape] to use as the mask.
+ * @return A new [ImageBitmap] with the shape mask applied.
+ */
+fun bitmapShapeMask(imageBitmap: ImageBitmap, kropShape: KropShape): ImageBitmap {
 
     val width = imageBitmap.width
     val height = imageBitmap.height
@@ -242,6 +322,19 @@ fun bitmapShapeMask(
     return outputImageBitmap
 }
 
+/**
+ * Creates a [Path] object representing the specified [KropShape] within the given dimensions.
+ *
+ * This function is used internally to generate the clipping mask for shaping the cropped image.
+ *
+ * @param kropShape The desired shape for the path.
+ * @param width The width of the area where the shape will be drawn.
+ * @param height The height of the area where the shape will be drawn.
+ * @param radiusSize A factor (between 0.0 and 1.0) used to determine the radius of corners for
+ * shapes like `RoundedCorner` and `CutCorner`. It's relative to the smaller dimension (width or
+ * height). Defaults to `0.05F`.
+ * @return A [Path] object representing the specified [kropShape].
+ */
 internal fun findKropShapePath(
     kropShape: KropShape,
     width: Float,
@@ -302,6 +395,19 @@ internal fun findKropShapePath(
     }
 }
 
+/**
+ * Creates a regular polygon path within the given rectangle.
+ *
+ * @param rect The bounding rectangle for the polygon.
+ * @param sides The number of sides of the polygon. Must be 3 or greater.
+ * @return A [Path] object representing the polygon.
+ *
+ * The polygon is centered within the rectangle.
+ * The size of the polygon is determined by the smaller dimension (width or height) of the
+ * rectangle.
+ * For polygons with an odd number of sides, one vertex points upwards.
+ * For polygons with an even number of sides, two vertices form a horizontal top edge.
+ */
 internal fun createPolygonPath(rect: Rect, sides: Int): Path {
 
     val path = Path()
@@ -325,6 +431,15 @@ internal fun createPolygonPath(rect: Rect, sides: Int): Path {
     return path
 }
 
+/**
+ * Creates a star-shaped path within the given rectangle.
+ *
+ * This function calculates the points of a 5-pointed star (as it uses 10 points, alternating outer
+ * and inner) that fits within the bounds of the provided [rect].
+ *
+ * @param rect The [Rect] defining the bounds within which the star path will be created.
+ * @return A [Path] object representing the star shape.
+ */
 internal fun createStarPath(rect: Rect): Path {
 
     val path = Path()
@@ -349,6 +464,15 @@ internal fun createStarPath(rect: Rect): Path {
     return path
 }
 
+/**
+ * Checks if this [ImageBitmap] is the same as another [ImageBitmap].
+ *
+ * This function converts both [ImageBitmap] instances to Android [Bitmap] objects
+ * and then uses the [Bitmap.sameAs] method to compare them.
+ *
+ * @param other The [ImageBitmap] to compare with.
+ * @return `true` if the bitmaps are the same, `false` otherwise.
+ */
 fun ImageBitmap.sameAs(other: ImageBitmap): Boolean {
 
     return this.asAndroidBitmap().sameAs(other.asAndroidBitmap())

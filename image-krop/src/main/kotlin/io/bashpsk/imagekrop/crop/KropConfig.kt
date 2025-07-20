@@ -5,6 +5,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+/**
+ * Configuration data class for customizing the appearance and behavior of the image cropping UI.
+ *
+ * @property handleWidth The width of the corner and side drag handles.
+ * @property handleHeight The height of the corner and side drag handles.
+ * @property centerHandleWidth The width of the center drag handle (used for moving the entire crop
+ * area).
+ * @property minimumCropSize The minimum allowable size (width or height) for the crop selection.
+ * @property handleColor The color of the drag handles.
+ * @property borderThickness The thickness of the border around the crop selection.
+ * @property borderColor The color of the border around the crop selection.
+ * @property targetSize The size of the target lines (crosshairs) in the center of the crop
+ * selection.
+ * @property targetThickness The thickness of the target lines.
+ * @property targetColor The color of the target lines.
+ * @property overlayColor The color of the overlay outside the crop selection area.
+ * @property shapeBorder The thickness of the border for any predefined shapes (if applicable).
+ * @property shapeColor The fill color for any predefined shapes (if applicable).
+ */
 @Immutable
 data class KropConfig(
     val handleWidth: Dp = 20.dp,

@@ -87,5 +87,6 @@ dependencies {
     implementation(libs.coil3.compose)
 
     //  MODULE          :
+    implementation(project(":image-kolor"))
     implementation(project(":image-krop"))
 }

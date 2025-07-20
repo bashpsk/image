@@ -1,8 +1,5 @@
 package io.bashpsk.imagekrop.crop
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.AspectRatio
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Flip
 import androidx.compose.material.icons.filled.Lock
@@ -55,6 +51,27 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 
+/**
+ * Composable function for the top app bar in the image cropping UI.
+ * It provides actions like navigating back, undoing changes, previewing the crop, and finalizing
+ * the crop.
+ *
+ * @param modifier Modifier to be applied to the TopAppBar.
+ * @param onRefreshing Lambda function to indicate if a refresh operation is in progress.
+ * @param originalImageBitmap The original image bitmap before any modifications.
+ * @param modifiedImageBitmap The currently modified image bitmap.
+ * @param onModifiedImage Lambda function to be called when the image is modified.
+ * @param onImageKropDone Lambda function to be called when the image cropping is finalized.
+ * @param canvasSize The size of the canvas where the image is displayed and cropped.
+ * @param topLeft The top-left offset of the cropping rectangle.
+ * @param bottomRight The bottom-right offset of the cropping rectangle.
+ * @param onUndoImageBitmap Lambda function to undo the last image modification.
+ * @param imagePreviewSheetState State for the bottom sheet used to preview the image.
+ * @param snackbarCoroutineScope Coroutine scope for showing snackbars.
+ * @param snackbarHostState State for managing snackbars.
+ * @param kropShape The current shape used for cropping.
+ * @param onNavigateBack Lambda function to handle navigation back.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ImageKropTopBar(
@@ -219,6 +236,33 @@ internal fun ImageKropTopBar(
     )
 }
 
+/**
+ * Composable function for the bottom bar of the image cropping UI.
+ * It provides controls for flipping the image, changing the aspect ratio, and selecting a crop
+ * shape.
+ *
+ * @param modifier The modifier to be applied to the bottom bar.
+ * @param kropAspectRatio The current aspect ratio for cropping.
+ * @param onKropAspectRatio Callback function invoked when the aspect ratio is changed.
+ * @param kropShapeList An optional immutable list of available crop shapes. If null, default shapes
+ * are used.
+ * @param kropShape The current crop shape.
+ * @param onKropShape Callback function invoked when the crop shape is changed.
+ * @param onRefreshing Callback function to indicate whether a refresh operation is in progress.
+ * @param originalImageBitmap The original image bitmap before any modifications.
+ * @param onModifiedImage Callback function invoked when the image is modified (e.g., flipped).
+ * @param onImageKropDone Callback function invoked when the cropping operation is completed
+ * successfully or fails.
+ * @param canvasSize The size of the canvas where the image is displayed and cropped.
+ * @param topLeft The top-left offset of the crop selection area.
+ * @param bottomRight The bottom-right offset of the crop selection area.
+ * @param onUndoImageBitmap Callback function to undo the last image modification (not directly used
+ * in this bottom bar but passed for consistency).
+ * @param snackbarCoroutineScope The coroutine scope for showing snackbars.
+ * @param snackbarHostState The state for managing snackbars.
+ * @param isAspectLocked A boolean indicating whether the aspect ratio is locked.
+ * @param onAspectLocked Callback function invoked when the aspect ratio lock state is changed.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ImageKropBottomBar(
@@ -486,11 +530,17 @@ internal fun ImageKropBottomBar(
     }
 }
 
+/**
+ * A composable function that displays a KropShape as a preview.
+ *
+ * This function uses a Canvas to draw the shape. The color of the shape changes based on whether it
+ * is selected or not.
+ *
+ * @param kropShape The KropShape to be displayed.
+ * @param isSelected A boolean indicating whether the shape is currently selected.
+ */
 @Composable
-private fun KropShapeView(
-    kropShape: KropShape,
-    isSelected: Boolean
-) {
+private fun KropShapeView(kropShape: KropShape, isSelected: Boolean) {
 
     val unSelectedIconColor = MaterialTheme.colorScheme.onSurface
     val selectedIconColor = MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.5F)
@@ -505,18 +555,5 @@ private fun KropShapeView(
     ) {
 
         drawKropShapePreview(kropShape = kropShape, shapeColor = shapeColor)
-    }
-}
-
-@Composable
-internal fun SelectedIcon(isSelected: Boolean) {
-
-    AnimatedVisibility(
-        visible = isSelected,
-        enter = fadeIn(),
-        exit = fadeOut()
-    ) {
-
-        Icon(imageVector = Icons.Filled.Check, contentDescription = "Selected")
     }
 }

@@ -39,6 +39,25 @@ import io.bashpsk.imagekrop.offset.hasNeared
 import kotlinx.collections.immutable.ImmutableList
 import kotlin.math.abs
 
+/**
+ * A Composable function that provides an image cropping interface.
+ *
+ * This function allows users to crop an image with various configurations,
+ * including aspect ratios and crop shapes. It provides a visual interface
+ * for selecting the crop area and applying the crop.
+ *
+ * @param modifier Optional [Modifier] for the root Composable.
+ * @param imageBitmap The [ImageBitmap] to be cropped. If null, a placeholder "broken image"
+ *   will be displayed.
+ * @param kropConfig The [KropConfig] to customize the appearance and behavior of the cropping
+ *   interface. Defaults to a standard [KropConfig].
+ * @param kropShapeList An optional [ImmutableList] of [KropShape]s that the user can select from.
+ *   If null or empty, the shape selection UI might be hidden or default to a single shape.
+ * @param onImageKropDone A callback function that is invoked when the user finalizes the crop.
+ *   It receives a [KropResult] object containing the cropped image and its details.
+ * @param onNavigateBack A callback function that is invoked when the user initiates a back
+ *   navigation action, typically by pressing a back button in the UI. Defaults to an empty lambda.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
