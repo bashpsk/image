@@ -12,7 +12,7 @@ plugins {
 
 android {
 
-    namespace = "io.bashpsk.imagekrop"
+    namespace = "io.bashpsk.imagekolor"
     compileSdk = 36
 
     defaultConfig {
@@ -101,7 +101,7 @@ publishing {
 
                 from(components["release"])
                 groupId = "io.bashpsk"
-                artifactId = "image-krop"
+                artifactId = "image-kolor"
                 version = "1.0.0"
             }
         }

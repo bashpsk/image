@@ -23,3 +23,4 @@ dependencyResolutionManagement {
 rootProject.name = "Image Krop"
 include(":app")
 include(":image-krop")
+include(":image-kolor")
