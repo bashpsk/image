@@ -11,17 +11,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.bashpsk.imagekolor.R
 import kotlinx.collections.immutable.toImmutableList
 
 @Composable
 fun ImageFilter(
     modifier: Modifier = Modifier,
-    selectedKolorFilter: ImageKolorFilter,
-    onFilterClick: (filter: ImageKolorFilter) -> Unit
+    state: ImageFilterState = rememberImageFilterState()
 ) {
 
-    val kolorFilterList = remember { ImageKolorFilter.entries.toImmutableList() }
+    val kolorFilterList = remember { ImageFilterType.entries.toImmutableList() }
 
     LazyVerticalGrid(
         modifier = modifier,
@@ -35,16 +33,16 @@ fun ImageFilter(
             key = { kolorFilter -> kolorFilter.name }
         ) { kolorFilter ->
 
-            val isSelected by remember(kolorFilter, selectedKolorFilter) {
-                derivedStateOf { kolorFilter == selectedKolorFilter }
+            val isSelected by remember(kolorFilter, state) {
+                derivedStateOf { kolorFilter == state.selectedFilter }
             }
 
             KolorFilterView(
                 modifier = Modifier.fillMaxWidth(),
                 kolorFilter = { kolorFilter },
-                imageModel = { R.drawable.flower_02 },
+                imageModel = { state.previewImage },
                 isSelected = { isSelected },
-                onFilterClick = onFilterClick
+                onFilterClick = state::onSelectFilter
             )
         }
     }

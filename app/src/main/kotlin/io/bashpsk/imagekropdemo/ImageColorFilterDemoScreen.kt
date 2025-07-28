@@ -4,7 +4,9 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DoneAll
@@ -15,11 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
@@ -28,8 +26,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
 import io.bashpsk.imagekolor.filter.ImageFilter
-import io.bashpsk.imagekolor.filter.ImageKolorFilter
 import io.bashpsk.imagekolor.filter.getKolorFilterBitmap
+import io.bashpsk.imagekolor.filter.rememberImageFilterState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,7 +38,7 @@ fun ImageColorFilterDemoScreen() {
     val bitmapCoroutineScope = rememberCoroutineScope()
 
     val imageBitmap = ImageBitmap.imageResource(R.drawable.wallpaper02)
-    var selectedKolorFilter by rememberSaveable { mutableStateOf(ImageKolorFilter.Original) }
+    val imageFilterState = rememberImageFilterState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -59,7 +57,7 @@ fun ImageColorFilterDemoScreen() {
                             bitmapCoroutineScope.launch {
 
                                 imageBitmap.getKolorFilterBitmap(
-                                    filter = selectedKolorFilter
+                                    filter = imageFilterState.selectedFilter
                                 ).saveAsFile(name = "PSK-Colored").let { file ->
 
                                     Toast.makeText(
@@ -91,20 +89,18 @@ fun ImageColorFilterDemoScreen() {
         ) {
 
             Image(
-                modifier = Modifier.weight(weight = 1.0F),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16F / 9F),
                 bitmap = imageBitmap,
                 contentScale = ContentScale.Fit,
-                colorFilter = selectedKolorFilter.colorFilter,
+                colorFilter = imageFilterState.selectedFilter.colorFilter,
                 contentDescription = "Image Color Filter"
             )
 
             ImageFilter(
                 modifier = Modifier.weight(weight = 1.0F),
-                selectedKolorFilter = selectedKolorFilter,
-                onFilterClick = { filter ->
-
-                    selectedKolorFilter = filter
-                }
+                state = imageFilterState
             )
         }
     }

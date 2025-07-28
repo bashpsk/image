@@ -1,6 +1,6 @@
 package io.bashpsk.imagekolor.filter
 
-import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -15,26 +15,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import io.bashpsk.imagekolor.R
 
 @Composable
 fun KolorFilterView(
     modifier: Modifier = Modifier,
-    kolorFilter: () -> ImageKolorFilter,
-    @DrawableRes
-    imageModel: () -> Int = { R.drawable.image_broken },
+    kolorFilter: () -> ImageFilterType,
+    imageModel: () -> ImageBitmap,
     isSelected: () -> Boolean = { false },
     contentScale: ContentScale = ContentScale.Crop,
     borderWidth: Dp = if (isSelected()) 2.dp else 0.2.dp,
     borderColor: Color = MaterialTheme.colorScheme.error,
     shape: Shape = MaterialTheme.shapes.extraSmall,
-    onFilterClick: (filter: ImageKolorFilter) -> Unit
+    onFilterClick: (filter: ImageFilterType) -> Unit
 ) {
 
     val borderModifierUnselected = Modifier.border(
@@ -66,9 +64,9 @@ fun KolorFilterView(
             contentAlignment = Alignment.BottomCenter
         ) {
 
-            AsyncImage(
+            Image(
                 modifier = Modifier.fillMaxSize(),
-                model = imageModel(),
+                bitmap = imageModel(),
                 contentScale = contentScale,
                 colorFilter = kolorFilter().colorFilter,
                 contentDescription = kolorFilter().label
