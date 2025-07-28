@@ -15,13 +15,13 @@ import io.bashpsk.imagekolor.R
 import kotlinx.collections.immutable.toImmutableList
 
 @Composable
-fun ImageKolor(
+fun ImageFilter(
     modifier: Modifier = Modifier,
-    selectedKolorFilter: KolorFilter,
-    onFilterClick: (filter: KolorFilter) -> Unit
+    selectedKolorFilter: ImageKolorFilter,
+    onFilterClick: (filter: ImageKolorFilter) -> Unit
 ) {
 
-    val kolorFilterList = remember { KolorFilter.entries.toImmutableList() }
+    val kolorFilterList = remember { ImageKolorFilter.entries.toImmutableList() }
 
     LazyVerticalGrid(
         modifier = modifier,

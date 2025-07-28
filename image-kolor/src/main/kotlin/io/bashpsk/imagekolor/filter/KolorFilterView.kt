@@ -26,7 +26,7 @@ import io.bashpsk.imagekolor.R
 @Composable
 fun KolorFilterView(
     modifier: Modifier = Modifier,
-    kolorFilter: () -> KolorFilter,
+    kolorFilter: () -> ImageKolorFilter,
     @DrawableRes
     imageModel: () -> Int = { R.drawable.image_broken },
     isSelected: () -> Boolean = { false },
@@ -34,7 +34,7 @@ fun KolorFilterView(
     borderWidth: Dp = if (isSelected()) 2.dp else 0.2.dp,
     borderColor: Color = MaterialTheme.colorScheme.error,
     shape: Shape = MaterialTheme.shapes.extraSmall,
-    onFilterClick: (filter: KolorFilter) -> Unit
+    onFilterClick: (filter: ImageKolorFilter) -> Unit
 ) {
 
     val borderModifierUnselected = Modifier.border(

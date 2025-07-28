@@ -27,8 +27,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
-import io.bashpsk.imagekolor.filter.ImageKolor
-import io.bashpsk.imagekolor.filter.KolorFilter
+import io.bashpsk.imagekolor.filter.ImageFilter
+import io.bashpsk.imagekolor.filter.ImageKolorFilter
 import io.bashpsk.imagekolor.filter.getKolorFilterBitmap
 import kotlinx.coroutines.launch
 
@@ -40,7 +40,7 @@ fun ImageColorFilterDemoScreen() {
     val bitmapCoroutineScope = rememberCoroutineScope()
 
     val imageBitmap = ImageBitmap.imageResource(R.drawable.wallpaper02)
-    var selectedKolorFilter by rememberSaveable { mutableStateOf(KolorFilter.Original) }
+    var selectedKolorFilter by rememberSaveable { mutableStateOf(ImageKolorFilter.Original) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -98,7 +98,7 @@ fun ImageColorFilterDemoScreen() {
                 contentDescription = "Image Color Filter"
             )
 
-            ImageKolor(
+            ImageFilter(
                 modifier = Modifier.weight(weight = 1.0F),
                 selectedKolorFilter = selectedKolorFilter,
                 onFilterClick = { filter ->

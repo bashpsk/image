@@ -3,7 +3,7 @@ package io.bashpsk.imagekolor.filter
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 
-enum class KolorFilter(val label: String) {
+enum class ImageKolorFilter(val label: String) {
 
     Original(label = "Original") {
 

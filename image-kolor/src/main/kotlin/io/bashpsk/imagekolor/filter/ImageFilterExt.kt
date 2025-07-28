@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.unit.round
 
-fun ImageBitmap.getKolorFilterBitmap(filter: KolorFilter): ImageBitmap {
+fun ImageBitmap.getKolorFilterBitmap(filter: ImageKolorFilter): ImageBitmap {
 
     return getKolorFilterBitmap(filter = filter.colorFilter)
 }
