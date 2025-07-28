@@ -162,7 +162,7 @@ fun ImageCropDemoScreen() {
                         coroutineScope.launch {
 
                             (kropResult as KropResult.Success).cropped.saveAsFile(
-                                name = "PSK"
+                                name = "PSK-Cropped"
                             ).let { file ->
 
                                 Toast.makeText(

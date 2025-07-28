@@ -19,7 +19,8 @@ class MainActivity : ComponentActivity() {
 
 //                TransformImageDemoScreen()
 //                ImageCropDemoScreen()
-                ImageColorFilterDemoScreen()
+//                ImageColorFilterDemoScreen()
+                ImageKolorDemoScreen()
             }
         }
     }
