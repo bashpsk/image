@@ -3,14 +3,29 @@ package io.bashpsk.imagekolor.filter
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 
+/**
+ * Enum class representing different image filter types.
+ * Each filter type has a human-readable [label] and a [colorMatrix]
+ * that defines the color transformation for the filter.
+ *
+ * The [colorFilter] property provides a pre-configured [ColorFilter]
+ * instance for easy application of the filter.
+ */
 enum class ImageFilterType(val label: String) {
 
+    /**
+     * Represents the original, unfiltered image.
+     * This filter does not apply any transformations to the image.
+     */
     Original(label = "Original") {
 
         override val colorMatrix: ColorMatrix
             get() = ColorMatrix()
     },
 
+    /**
+     * Black and white filter. Sets saturation to 0.
+     */
     BlackAndWhite(label = "Black & White") {
 
         override val colorMatrix: ColorMatrix
@@ -20,6 +35,11 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Applies a sepia tone effect to the image, giving it a warm, brownish, old-fashioned look.
+     * This is achieved by first desaturating the image and then applying a specific color matrix
+     * that shifts the colors towards shades of brown.
+     */
     Sepia(label = "Sepia") {
 
         override val colorMatrix: ColorMatrix
@@ -37,6 +57,10 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Inverts the colors of the image.
+     * This creates a negative-like effect.
+     */
     Invert(label = "Invert") {
 
         override val colorMatrix: ColorMatrix
@@ -50,6 +74,11 @@ enum class ImageFilterType(val label: String) {
             )
     },
 
+    /**
+     * Applies a grayscale filter to the image, converting it to shades of gray.
+     * This filter works by calculating the luminance of each pixel and setting the red, green, and
+     * blue components to this luminance value.
+     */
     Grayscale(label = "Grayscale") {
 
         override val colorMatrix: ColorMatrix
@@ -63,6 +92,10 @@ enum class ImageFilterType(val label: String) {
             )
     },
 
+    /**
+     * Applies a vintage filter to the image, giving it an old-fashioned look.
+     * This effect is achieved by reducing saturation and applying a specific color matrix.
+     */
     Vintage(label = "Vintage") {
 
         override val colorMatrix: ColorMatrix
@@ -80,6 +113,10 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Technicolor filter: Simulates the look of old Technicolor films with
+     * boosted red and blue channels and reduced green.
+     */
     Technicolor(label = "Technicolor") {
 
         override val colorMatrix: ColorMatrix
@@ -93,6 +130,12 @@ enum class ImageFilterType(val label: String) {
             )
     },
 
+    /**
+     * Polaroid:
+     * This filter emulates the look of a Polaroid photograph, characterized by a slightly
+     * desaturated and warm tone. It enhances the red and green channels more than the blue
+     * channel, giving it a nostalgic, faded appearance.
+     */
     Polaroid(label = "Polaroid") {
 
         override val colorMatrix: ColorMatrix
@@ -110,6 +153,10 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Cool: Enhances blue tones and slightly increases blue channel brightness.
+     * This filter gives the image a cooler, bluish tint.
+     */
     Cool(label = "Cool") {
 
         override val colorMatrix: ColorMatrix
@@ -123,6 +170,12 @@ enum class ImageFilterType(val label: String) {
             )
     },
 
+    /**
+     * Warm filter: Increases the red and green channels while slightly decreasing the blue channel
+     * to give the image a warmer, more yellowish tone.
+     * This filter enhances the warmth of the image by boosting red and green components
+     * and slightly reducing blue, which results in a cozy, sunlit effect.
+     */
     Warm(label = "Warm") {
 
         override val colorMatrix: ColorMatrix
@@ -136,6 +189,9 @@ enum class ImageFilterType(val label: String) {
             )
     },
 
+    /**
+     * Enhances the contrast of the image, making dark areas darker and light areas lighter.
+     */
     HighContrast(label = "High Contrast") {
 
         override val colorMatrix: ColorMatrix
@@ -155,6 +211,10 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Low Contrast: Decreases the difference between light and dark areas.
+     * This filter makes the image appear flatter and less defined by reducing the intensity range.
+     */
     LowContrast(label = "Low Contrast") {
 
         override val colorMatrix: ColorMatrix
@@ -174,6 +234,9 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Represents a brighter filter type, which increases the brightness of the image.
+     */
     Brighter(label = "Brighter") {
 
         override val colorMatrix: ColorMatrix
@@ -192,6 +255,9 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Darker filter: Reduces the brightness of the image.
+     */
     Darker(label = "Darker") {
 
         override val colorMatrix: ColorMatrix
@@ -210,6 +276,10 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Hue Rotate Red filter: Rotates the hue towards red.
+     * This filter makes reds more prominent and slightly shifts other colors towards red.
+     */
     HueRotateRed(label = "Hue Rotate (Red)") {
 
         override val colorMatrix: ColorMatrix
@@ -223,6 +293,10 @@ enum class ImageFilterType(val label: String) {
             )
     },
 
+    /**
+     * Hue Rotate (Green) filter: Rotates the hues in the image towards green.
+     * This effect can make images appear more lush or vibrant in green tones.
+     */
     HueRotateGreen(label = "Hue Rotate (Green)") {
 
         override val colorMatrix: ColorMatrix
@@ -236,6 +310,11 @@ enum class ImageFilterType(val label: String) {
             )
     },
 
+    /**
+     * Hue Rotate (Blue) filter: Rotates the hues in the image with a bias towards blue.
+     * This filter adjusts the color channels to shift hues towards blue, creating a cool,
+     * blue-tinted effect.
+     */
     HueRotateBlue(label = "Hue Rotate (Blue)") {
 
         override val colorMatrix: ColorMatrix
@@ -249,6 +328,14 @@ enum class ImageFilterType(val label: String) {
             )
     },
 
+    /**
+     * Night Vision filter.
+     * This filter applies a green tint and increases contrast to simulate a night vision effect.
+     *
+     * The filter first desaturates the image slightly.
+     * Then, it applies a color matrix to shift colors towards green and adjust brightness.
+     * Finally, it increases the contrast to enhance details.
+     */
     NightVision(label = "Night Vision") {
 
         override val colorMatrix: ColorMatrix
@@ -278,6 +365,11 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Kodachrome filter: A filter that mimics the iconic look of Kodachrome film, known for its
+     * vibrant colors, high contrast, and distinctive color rendition. This filter enhances reds
+     * and blues, providing a rich, nostalgic feel.
+     */
     Kodachrome(label = "Kodachrome") {
 
         override val colorMatrix: ColorMatrix
@@ -291,6 +383,9 @@ enum class ImageFilterType(val label: String) {
             )
     },
 
+    /**
+     * Filter that increases the saturation of the image, making colors more vibrant.
+     */
     Saturate(label = "Saturate") {
 
         override val colorMatrix: ColorMatrix
@@ -300,6 +395,11 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Applies an alternative sepia tone to the image, giving it a warm, brownish tint.
+     * This version of sepia directly applies a color matrix without desaturating the image first,
+     * which can result in a different visual effect compared to the standard Sepia filter.
+     */
     SepiaAlternative(label = "Sepia Alt") {
 
         override val colorMatrix: ColorMatrix
@@ -313,6 +413,12 @@ enum class ImageFilterType(val label: String) {
             )
     },
 
+    /**
+     * Increases the intensity of the red color channel.
+     * This filter enhances the red tones in the image, making them appear more vibrant and
+     * prominent.
+     * It achieves this by scaling the red component of each pixel by a factor of 1.5.
+     */
     BoostRed(label = "Boost Red") {
 
         override val colorMatrix: ColorMatrix
@@ -322,6 +428,9 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * A filter that boosts the green channel of the image.
+     */
     BoostGreen(label = "Boost Green") {
 
         override val colorMatrix: ColorMatrix
@@ -331,6 +440,11 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Enhances the blue channel in the image, making blue colors more prominent.
+     * This effect is achieved by increasing the multiplier for the blue component in the color
+     * matrix.
+     */
     BoostBlue(label = "Boost Blue") {
 
         override val colorMatrix: ColorMatrix
@@ -340,6 +454,12 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Applies a cyanotype filter, giving the image a blue monochrome appearance.
+     * This filter desaturates the image and then applies a color transformation
+     * to shift the tones towards cyan and blue, mimicking the historical
+     * cyanotype photographic printing process.
+     */
     Cyanotype(label = "Cyanotype") {
 
         override val colorMatrix: ColorMatrix
@@ -360,6 +480,11 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Moon filter: Applies a cool, slightly desaturated, and darkened effect,
+     * reminiscent of moonlight. It reduces overall saturation and adjusts color
+     * channels to create a blueish tint, enhancing shadows and highlights.
+     */
     Moon(label = "Moon") {
 
         override val colorMatrix: ColorMatrix
@@ -377,6 +502,9 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Lomo filter effect, characterized by high contrast, saturated colors, and often a vignette.
+     */
     Lomo(label = "Lomo") {
 
         override val colorMatrix: ColorMatrix
@@ -406,6 +534,10 @@ enum class ImageFilterType(val label: String) {
             }
     },
 
+    /**
+     * Clarendon filter: Increases saturation and contrast, adding a cyan tint to highlights
+     * and cooling shadows. This filter makes images appear more vibrant and sharp.
+     */
     Clarendon(label = "Clarendon") {
 
         override val colorMatrix: ColorMatrix
@@ -437,7 +569,15 @@ enum class ImageFilterType(val label: String) {
             }
     };
 
+    /**
+     * The [ColorMatrix] associated with this image filter type.
+     * This matrix is used to transform the colors of an image.
+     */
     internal abstract val colorMatrix: ColorMatrix
 
+    /**
+     * A [ColorFilter] that applies the image filter.
+     * This property is lazily initialized to optimize performance.
+     */
     val colorFilter: ColorFilter by lazy { ColorFilter.colorMatrix(colorMatrix = colorMatrix) }
 }

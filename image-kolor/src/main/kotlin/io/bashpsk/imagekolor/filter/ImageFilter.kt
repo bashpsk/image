@@ -13,6 +13,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.toImmutableList
 
+/**
+ * Composable function that displays a grid of image filters.
+ *
+ * This function uses a [LazyVerticalGrid] to efficiently display a list of available image filters.
+ * Each filter is represented by a [KolorFilterView], which shows a preview of the filter applied
+ * to a sample image. The user can select a filter by clicking on it.
+ *
+ * @param modifier Optional [Modifier] for this composable.
+ * @param state The [ImageFilterState] that holds the current state of the image filter selection,
+ * including the preview image and the currently selected filter. Defaults to a new instance created
+ * by [rememberImageFilterState].
+ */
 @Composable
 fun ImageFilter(
     modifier: Modifier = Modifier,

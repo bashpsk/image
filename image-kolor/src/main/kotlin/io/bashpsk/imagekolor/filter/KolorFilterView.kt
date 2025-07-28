@@ -22,6 +22,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+/**
+ * A Composable function that displays an image with a color filter applied.
+ * It also shows the filter's label and allows interaction through clicks.
+ *
+ * @param modifier The modifier to be applied to the component.
+ * @param kolorFilter A lambda function that returns the [ImageFilterType] to be applied.
+ * @param imageModel A lambda function that returns the [ImageBitmap] to be displayed.
+ * @param isSelected A lambda function that returns a boolean indicating if the filter is currently
+ * selected. Defaults to false.
+ * @param contentScale The [ContentScale] to be used for the image. Defaults to [ContentScale.Crop].
+ * @param borderWidth The width of the border around the image. Defaults to 2.dp if selected, 0.2.dp
+ * otherwise.
+ * @param borderColor The color of the border around the image. Defaults to
+ * [MaterialTheme.colorScheme.error].
+ * @param shape The shape of the image and border. Defaults to [MaterialTheme.shapes.extraSmall].
+ * @param onFilterClick A lambda function that is invoked when the filter view is clicked, passing
+ * the selected [ImageFilterType].
+ */
 @Composable
 fun KolorFilterView(
     modifier: Modifier = Modifier,

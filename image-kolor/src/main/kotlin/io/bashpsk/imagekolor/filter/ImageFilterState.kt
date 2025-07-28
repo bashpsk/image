@@ -10,6 +10,17 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.imageResource
 import io.bashpsk.imagekolor.R
 
+/**
+ * Creates and remembers an [ImageFilterState] instance.
+ *
+ * This composable function is used to manage the state of image filters,
+ * including the currently selected filter and the preview image.
+ *
+ * @param previewImage The optional [ImageBitmap] to be used as the preview image.
+ * If `null`, a default image (R.drawable.flower_02) will be used.
+ * @return An [ImageFilterState] instance that can be used to control and observe the image filter
+ * state.
+ */
 @Composable
 fun rememberImageFilterState(previewImage: ImageBitmap? = null): ImageFilterState {
 
@@ -18,6 +29,11 @@ fun rememberImageFilterState(previewImage: ImageBitmap? = null): ImageFilterStat
     return remember(imageBitmap) { ImageFilterState(previewImage = imageBitmap) }
 }
 
+/**
+ * Represents the state of the image filter, including the preview image and the selected filter.
+ *
+ * @param previewImage The image to be displayed and filtered.
+ */
 @Stable
 class ImageFilterState(val previewImage: ImageBitmap) {
 
