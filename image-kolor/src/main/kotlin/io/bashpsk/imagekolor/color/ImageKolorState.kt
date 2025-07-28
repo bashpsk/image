@@ -11,6 +11,21 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlin.math.pow
 
+/**
+ * Remembers and creates an [ImageKolorState] instance.
+ *
+ * This composable function is used to create and manage the state for image color adjustments.
+ * It takes an [ImageBitmap] and an optional [ImageKolorConfig] as input.
+ * The state is remembered across recompositions, and will be re-initialized if the [imageBitmap]
+ * changes.
+ *
+ * @param imageBitmap The [ImageBitmap] to apply color adjustments to. Can be null if no image is
+ * loaded.
+ * @param config The [ImageKolorConfig] to use for configuring the color adjustments. Defaults to a
+ * default [ImageKolorConfig].
+ * @return An [ImageKolorState] instance that holds the current color adjustment values and provides
+ * methods to modify them.
+ */
 @Composable
 fun rememberImageKolorState(
     imageBitmap: ImageBitmap?,
@@ -20,11 +35,41 @@ fun rememberImageKolorState(
     return remember(imageBitmap) { ImageKolorState(imageBitmap = imageBitmap, config = config) }
 }
 
+/**
+ * State object that can be used to control the color adjustments applied to an image.
+ * This state is typically remembered using [rememberImageKolorState].
+ *
+ * @param imageBitmap The [ImageBitmap] to apply color adjustments to. Can be null if no image is
+ * loaded yet.
+ * @param config The [ImageKolorConfig] that defines the behavior and appearance of the color
+ * adjustment controls.
+ *
+ * @property brightness Controls the overall lightness or darkness of the image.
+ * Value typically ranges from -1F (darker) to 1F (lighter), with 0F being the original brightness.
+ * @property exposure Controls the exposure level of the image, simulating changes in camera exposure.
+ * Value typically ranges from -1F (underexposed) to 1F (overexposed), with 0F being the original
+ * exposure.
+ * @property contrast Controls the difference between light and dark areas of the image.
+ * Value typically ranges from 0F (no contrast) to 2F (high contrast), with 1F being the original
+ * contrast.
+ * @property highlights Adjusts the brightness of the brightest areas of the image.
+ * Value typically ranges from -1F (darker highlights) to 1F (brighter highlights), with 0F being no
+ * change.
+ * @property shadows Adjusts the brightness of the darkest areas of the image.
+ * Value typically ranges from -1F (darker shadows) to 1F (brighter shadows), with 0F being no
+ * change.
+ * @property saturation Controls the intensity of colors in the image.
+ * Value typically ranges from 0F (grayscale) to 2F (highly saturated), with 1F being the original
+ * saturation.
+ * @property warmth Adjusts the color temperature of the image, making it appear warmer
+ * (more orange) or cooler (more blue).
+ * Value typically ranges from -1F (cooler) to 1F (warmer), with 0F being the original warmth.
+ * @property tint Adjusts the green-magenta balance of the image.
+ * Value typically ranges from -1F (more green) to 1F (more magenta), with 0F being the original
+ * tint.
+ */
 @Stable
-class ImageKolorState(
-    val imageBitmap: ImageBitmap?,
-    val config: ImageKolorConfig
-) {
+class ImageKolorState(val imageBitmap: ImageBitmap?, val config: ImageKolorConfig) {
 
     var brightness by mutableFloatStateOf(0F)
         internal set

@@ -30,6 +30,20 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
+/**
+ * A Composable function that displays an image with applied color filters.
+ *
+ * This function takes an [ImageKolorState] which contains the image bitmap and
+ * the color filter parameters. It renders the image using the Jetpack Compose `Image`
+ * Composable. If the `imageBitmap` in the `state` is null, it displays a
+ * "Image Load Failed!" message.
+ *
+ * The color filter is derived from the `state` and applied to the image.
+ * The image is displayed with a fixed aspect ratio of 16:9 and fills the available width.
+ *
+ * @param modifier Optional [Modifier] to be applied to the root Composable of this component.
+ * @param state The [ImageKolorState] that holds the image data and color filter settings.
+ */
 @Composable
 fun KolorImageView(modifier: Modifier = Modifier, state: ImageKolorState) {
 
@@ -64,6 +78,17 @@ fun KolorImageView(modifier: Modifier = Modifier, state: ImageKolorState) {
     }
 }
 
+/**
+ * A Composable function that displays a set of sliders for adjusting image color properties.
+ *
+ * This function arranges multiple [AdjustmentSlider] components in a vertical [Column].
+ * Each slider controls a specific image adjustment like brightness, exposure, contrast, etc.
+ * The state of these adjustments is managed by the [ImageKolorState] object.
+ *
+ * @param modifier Optional [Modifier] for this composable. Defaults to [Modifier].
+ * @param state The [ImageKolorState] that holds the current values of the adjustments and their
+ * enabled status.
+ */
 @Composable
 fun KolorAdjustmentSliders(modifier: Modifier = Modifier, state: ImageKolorState) {
 
@@ -171,6 +196,23 @@ fun KolorAdjustmentSliders(modifier: Modifier = Modifier, state: ImageKolorState
     }
 }
 
+/**
+ * A Composable function that displays a slider for adjusting a value.
+ *
+ * This function creates a vertical layout containing a label and a slider.
+ * The label displays the provided [label] text along with the current [value]
+ * represented as a percentage within the given [valueRange].
+ * The slider allows the user to change the [value].
+ * The slider is only displayed and interactive if [enabled] is true.
+ *
+ * @param modifier The modifier to be applied to the Column that holds the label and slider.
+ * @param label The text label to display above the slider.
+ * @param value The current value of the slider.
+ * @param valueRange The range of possible values for the slider.
+ * @param enabled A boolean indicating whether the slider is interactive. Defaults to true.
+ * @param onValueChange A callback function that is invoked when the slider's value changes.
+ * It receives the new Float value as an argument.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdjustmentSlider(

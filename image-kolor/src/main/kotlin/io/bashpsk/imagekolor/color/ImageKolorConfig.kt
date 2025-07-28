@@ -2,6 +2,22 @@ package io.bashpsk.imagekolor.color
 
 import androidx.compose.runtime.Immutable
 
+/**
+ * Configuration class for image color adjustments.
+ *
+ * This data class defines which color adjustment features are enabled.
+ * Each property corresponds to a specific color adjustment type.
+ * By default, all adjustments are enabled.
+ *
+ * @property enableBrightness Whether brightness adjustment is enabled.
+ * @property enableExposure Whether exposure adjustment is enabled.
+ * @property enableContrast Whether contrast adjustment is enabled.
+ * @property enableHighlights Whether highlights adjustment is enabled.
+ * @property enableShadows Whether shadows adjustment is enabled.
+ * @property enableSaturation Whether saturation adjustment is enabled.
+ * @property enableWarmth Whether warmth adjustment is enabled.
+ * @property enableTint Whether tint adjustment is enabled.
+ */
 @Immutable
 data class ImageKolorConfig(
     val enableBrightness: Boolean = true,
