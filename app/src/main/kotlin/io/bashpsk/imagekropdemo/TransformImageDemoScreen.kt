@@ -7,23 +7,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.imageResource
-import io.bashpsk.imagekrop.view.ImageTransformData
 import io.bashpsk.imagekrop.view.TransformImageView
+import io.bashpsk.imagekrop.view.rememberImageTransformState
 
 @Composable
 fun TransformImageDemoScreen() {
 
     val imageBitmap = ImageBitmap.imageResource(R.drawable.empty_layer)
 
-    var transformData by rememberSaveable { mutableStateOf(value = ImageTransformData()) }
+    val imageTransformState = rememberImageTransformState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize()
@@ -40,11 +36,7 @@ fun TransformImageDemoScreen() {
             TransformImageView(
                 modifier = Modifier.fillMaxWidth(),
                 imageModel = { R.drawable.empty_layer },
-                transformData = { transformData },
-                onTransformDataChange = { transform ->
-
-                    transformData = transform
-                }
+                state = imageTransformState
             )
         }
     }

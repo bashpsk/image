@@ -32,7 +32,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.SubcomposeAsyncImage
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -45,20 +45,14 @@ import kotlin.time.Duration.Companion.milliseconds
  * @param modifier The modifier to be applied to the layout.
  * @param imageModel A lambda that returns the image model to be displayed. This can be a URL,
  * a local file path, or any other model supported by Coil.
- * @param zoomRange The allowable range for zooming the image. Defaults to `0.4F..8.0F`.
- * @param transformData A lambda that returns the current [ImageTransformData] which holds
- * the state of zoom, pan, and rotation. Defaults to a new [ImageTransformData] instance.
- * @param onTransformDataChange A lambda that is invoked when the [ImageTransformData] changes
- * due to user gestures. It receives the updated [ImageTransformData].
+ * @param state The [ImageTransformState] which holds the current state of zoom, pan, and rotation.
+ * Defaults to a remembered [ImageTransformState] instance.
  * @param onLeftSwipe A lambda that is invoked when a left swipe gesture is detected.
  * @param onRightSwipe A lambda that is invoked when a right swipe gesture is detected.
  * @param onClick A lambda that is invoked when the image is clicked. It receives the [Offset]
  * of the click.
  * @param onLongClick A lambda that is invoked when the image is long-clicked. It receives the
  * [Offset] of the long click.
- * @param transformConfig A lambda that returns the [TransformImageConfig] which controls
- * the enabled gestures (zoom, pan, rotation, swipe). Defaults to a new [TransformImageConfig]
- * instance with all gestures enabled.
  * @param contentScale The scaling to be applied to the image when displayed.
  * Defaults to [ContentScale.Fit].
  */
@@ -66,28 +60,140 @@ import kotlin.time.Duration.Companion.milliseconds
 fun TransformImageView(
     modifier: Modifier = Modifier,
     imageModel: () -> Any?,
-    zoomRange: ClosedFloatingPointRange<Float> = 0.4F..8.0F,
-    transformData: () -> ImageTransformData = { ImageTransformData() },
-    onTransformDataChange: (transform: ImageTransformData) -> Unit = {},
+    state: ImageTransformState = rememberImageTransformState(),
     onLeftSwipe: () -> Unit = {},
     onRightSwipe: () -> Unit = {},
     onClick: (offset: Offset) -> Unit = {},
     onLongClick: (offset: Offset) -> Unit = {},
-    transformConfig: () -> TransformImageConfig = { TransformImageConfig() },
     contentScale: ContentScale = ContentScale.Fit,
 ) {
 
     val gestureCoroutineScope = rememberCoroutineScope()
 
-    var imageGesture by remember { mutableStateOf(value = TransformImageGesture.INIT) }
-    var dragSwipeMinimum by remember { mutableFloatStateOf(value = 0.0F) }
-    var touchCount by remember { mutableIntStateOf(value = 0) }
-    val isOneTouch by remember { derivedStateOf { touchCount == 1 } }
-    val isTwoTouch by remember { derivedStateOf { touchCount == 2 } }
-    val isZoomed by remember(transformData()) { derivedStateOf { transformData().zoom != 1.0F } }
+    var resetImageGestureJob by remember { mutableStateOf<Job?>(null) }
+    var imageGesture by remember { mutableStateOf<TransformImageGesture?>(null) }
+    var dragSwipeMinimum by remember { mutableFloatStateOf(0.0F) }
+    var touchCount by remember { mutableIntStateOf(0) }
+    val isOneTouch by remember(touchCount) { derivedStateOf { touchCount == 1 } }
+    val isTwoTouch by remember(touchCount) { derivedStateOf { touchCount == 2 } }
+    val isZoomed by remember(state) { derivedStateOf { state.zoom != 1.0F } }
 
-    val isCanSwipe by remember(transformConfig()) {
-        derivedStateOf { transformData().zoom == 1.0F && transformConfig().isSwipeEnabled }
+    val isCanSwipe by remember(state) {
+        derivedStateOf { state.zoom == 1.0F && state.config.enableSwipe }
+    }
+
+    fun resetDragGestureAction() {
+
+        resetImageGestureJob?.cancel()
+        resetImageGestureJob = gestureCoroutineScope.launch(context = Dispatchers.Default) {
+
+            delay(duration = 1000.milliseconds)
+            imageGesture = null
+        }
+    }
+
+    val touchModifier = Modifier.pointerInput(Unit) {
+
+        awaitEachGesture {
+
+            do {
+
+                val event = awaitPointerEvent()
+
+                touchCount = event.changes.size
+            } while (event.changes.any { change -> change.pressed })
+        }
+    }
+
+    val tapPointerInput = Modifier.pointerInput(Unit) {
+
+        detectTapGestures(
+            onDoubleTap = { position ->
+
+                val zoomFactor = when (state.zoom) {
+
+                    in 0.80F..1.40F -> 2.0F
+                    in 1.80F..2.40F -> 3.0F
+                    in 2.80F..3.40F -> 4.0F
+                    else -> 1.0F
+                }.coerceIn(range = state.zoomRange)
+
+                state.zoom = zoomFactor
+            },
+            onTap = onClick,
+            onLongPress = onLongClick
+        )
+    }
+
+    val dragPointerInput = Modifier.pointerInput(Unit) {
+
+        detectHorizontalDragGestures(
+            onDragCancel = {
+
+                resetDragGestureAction()
+            },
+            onDragEnd = {
+
+                resetDragGestureAction()
+            }
+        ) { change, dragAmount ->
+
+            change.consume()
+            dragSwipeMinimum += dragAmount
+
+            when {
+
+                isTwoTouch -> {
+
+                    dragSwipeMinimum = 0.0F
+                    imageGesture = TransformImageGesture.INIT
+                    change.changedToUp()
+                    return@detectHorizontalDragGestures
+                }
+
+                isOneTouch && abs(x = dragSwipeMinimum) > 75.0F && isCanSwipe -> {
+
+                    imageGesture = when (imageGesture) {
+
+                        TransformImageGesture.INIT -> when {
+
+                            dragSwipeMinimum > 0 -> TransformImageGesture.RIGHT_SWIPE
+                            dragSwipeMinimum < 0 -> TransformImageGesture.LEFT_SWIPE
+                            else -> TransformImageGesture.INIT
+                        }
+
+                        else -> imageGesture
+                    }
+
+                    when (imageGesture) {
+
+                        TransformImageGesture.LEFT_SWIPE -> {
+
+                            onLeftSwipe()
+                            change.changedToUp()
+                        }
+
+                        TransformImageGesture.RIGHT_SWIPE -> {
+
+                            onRightSwipe()
+                            change.changedToUp()
+                        }
+
+                        else -> {}
+                    }
+
+                    dragSwipeMinimum = 0.0F
+                }
+
+                else -> {
+
+                    dragSwipeMinimum = 0.0F
+                    imageGesture = TransformImageGesture.INIT
+                    change.changedToUp()
+                    return@detectHorizontalDragGestures
+                }
+            }
+        }
     }
 
     val transformableState = rememberTransformableState { zoomChange, panChange, rotationChange ->
@@ -98,12 +204,12 @@ fun TransformImageView(
 
                 TransformImageGesture.INIT -> when {
 
-                    abs(rotationChange) >= 1.0F -> if (transformConfig().isRotationEnabled) {
+                    abs(rotationChange) >= 1.0F -> if (state.config.enableRotation) {
 
                         imageGesture = TransformImageGesture.ROTATION
                     }
 
-                    zoomChange >= 0.10F -> if (transformConfig().isZoomEnabled) {
+                    zoomChange >= 0.10F -> if (state.config.enableZoom) {
 
                         imageGesture = TransformImageGesture.ZOOM
                     }
@@ -111,60 +217,40 @@ fun TransformImageView(
 
                 TransformImageGesture.ZOOM -> {
 
-                    val newZoom = when (transformData().zoom * zoomChange) {
+                    val newZoom = when (state.zoom * zoomChange) {
 
-                        in 0.0F..zoomRange.start -> zoomRange.start
-                        in zoomRange.start..zoomRange.endInclusive -> {
-                            transformData().zoom * zoomChange
+                        in 0.0F..state.zoomRange.start -> state.zoomRange.start
+                        in state.zoomRange.start..state.zoomRange.endInclusive -> {
+                            state.zoom * zoomChange
                         }
 
-                        else -> zoomRange.endInclusive
-                    }
+                        else -> state.zoomRange.endInclusive
+                    }.coerceIn(range = state.zoomRange)
 
                     val newPan = Offset(
-                        x = transformData().positionX,
-                        y = transformData().positionY
+                        x = state.position.x,
+                        y = state.position.y
                     ) + panChange
 
-                    val newTransformData = transformData().copy(
-                        zoom = newZoom,
-                        positionX = newPan.x,
-                        positionY = newPan.y
-                    )
-
-                    onTransformDataChange(newTransformData)
-                    gestureCoroutineScope.coroutineContext.cancelChildren()
-
-                    gestureCoroutineScope.launch(context = Dispatchers.Default) {
-
-                        delay(duration = 300.milliseconds)
-                        imageGesture = TransformImageGesture.INIT
-                    }
+                    state.zoom = newZoom
+                    state.position = newPan
+                    resetDragGestureAction()
                 }
 
                 TransformImageGesture.ROTATION -> {
 
                     val newPan = Offset(
-                        x = transformData().positionX,
-                        y = transformData().positionY
+                        x = state.position.x,
+                        y = state.position.y
                     ) + panChange
-                    
-                    val newRotation = (transformData().rotation + rotationChange).toInt()
 
-                    val newTransformData = transformData().copy(
-                        rotation = newRotation.coerceIn(0..360),
-                        positionX = newPan.x,
-                        positionY = newPan.y
+                    val newRotation = (state.rotation + rotationChange).toInt().coerceIn(
+                        range = 0..360
                     )
 
-                    onTransformDataChange(newTransformData)
-                    gestureCoroutineScope.coroutineContext.cancelChildren()
-
-                    gestureCoroutineScope.launch(context = Dispatchers.Default) {
-
-                        delay(duration = 300.milliseconds)
-                        imageGesture = TransformImageGesture.INIT
-                    }
+                    state.position = newPan
+                    state.rotation = newRotation
+                    resetDragGestureAction()
                 }
 
                 TransformImageGesture.RIGHT_SWIPE, TransformImageGesture.LEFT_SWIPE -> {
@@ -181,7 +267,7 @@ fun TransformImageView(
 
             isOneTouch && isZoomed -> when (imageGesture) {
 
-                TransformImageGesture.INIT -> if (transformConfig().isPanEnabled) {
+                TransformImageGesture.INIT -> if (state.config.enablePan) {
 
                     imageGesture = TransformImageGesture.PAN
                 }
@@ -189,23 +275,12 @@ fun TransformImageView(
                 TransformImageGesture.PAN -> {
 
                     val newPan = Offset(
-                        x = transformData().positionX,
-                        y = transformData().positionY
+                        x = state.position.x,
+                        y = state.position.y
                     ) + panChange
 
-                    val newTransformData = transformData().copy(
-                        positionX = newPan.x,
-                        positionY = newPan.y
-                    )
-
-                    onTransformDataChange(newTransformData)
-                    gestureCoroutineScope.coroutineContext.cancelChildren()
-
-                    gestureCoroutineScope.launch(context = Dispatchers.Default) {
-
-                        delay(duration = 300.milliseconds)
-                        imageGesture = TransformImageGesture.INIT
-                    }
+                    state.position = newPan
+                    resetDragGestureAction()
                 }
 
                 TransformImageGesture.RIGHT_SWIPE, TransformImageGesture.LEFT_SWIPE -> {
@@ -232,126 +307,10 @@ fun TransformImageView(
 
     BoxWithConstraints(
         modifier = modifier
-            .pointerInput(Unit) {
-
-                awaitEachGesture {
-
-                    do {
-
-                        val event = awaitPointerEvent()
-
-                        touchCount = event.changes.size
-                    } while (event.changes.any { change -> change.pressed })
-                }
-            }
+            .then(touchModifier)
             .transformable(state = transformableState)
-            .pointerInput(Unit) {
-
-                detectTapGestures(
-                    onDoubleTap = { position ->
-
-                        val zoomFactor = when (transformData().zoom) {
-
-                            in 0.80F..1.40F -> 2.0F
-                            in 1.80F..2.40F -> 3.0F
-                            in 2.80F..3.40F -> 4.0F
-                            else -> 1.0F
-                        }
-
-                        val newTransformData = transformData().copy(
-                            zoom = zoomFactor,
-                            positionX = 0.0F,
-                            positionY = 0.0F
-                        )
-
-                        onTransformDataChange(newTransformData)
-                    },
-                    onTap = onClick,
-                    onLongPress = onLongClick
-                )
-            }
-            .pointerInput(Unit) {
-
-                detectHorizontalDragGestures(
-                    onDragCancel = {
-
-                        gestureCoroutineScope.coroutineContext.cancelChildren()
-
-                        gestureCoroutineScope.launch(context = Dispatchers.Default) {
-
-                            delay(duration = 200.milliseconds)
-                            imageGesture = TransformImageGesture.INIT
-                        }
-                    },
-                    onDragEnd = {
-
-                        gestureCoroutineScope.coroutineContext.cancelChildren()
-
-                        gestureCoroutineScope.launch(context = Dispatchers.Default) {
-
-                            delay(duration = 200.milliseconds)
-                            imageGesture = TransformImageGesture.INIT
-                        }
-                    }
-                ) { change, dragAmount ->
-
-                    change.consume()
-                    dragSwipeMinimum += dragAmount
-
-                    when {
-
-                        isTwoTouch -> {
-
-                            dragSwipeMinimum = 0.0F
-                            imageGesture = TransformImageGesture.INIT
-                            change.changedToUp()
-                            return@detectHorizontalDragGestures
-                        }
-
-                        isOneTouch && abs(x = dragSwipeMinimum) > 75.0F && isCanSwipe -> {
-
-                            imageGesture = when (imageGesture) {
-
-                                TransformImageGesture.INIT -> when {
-
-                                    dragSwipeMinimum > 0 -> TransformImageGesture.RIGHT_SWIPE
-                                    dragSwipeMinimum < 0 -> TransformImageGesture.LEFT_SWIPE
-                                    else -> TransformImageGesture.INIT
-                                }
-
-                                else -> imageGesture
-                            }
-
-                            when (imageGesture) {
-
-                                TransformImageGesture.LEFT_SWIPE -> {
-
-                                    onLeftSwipe()
-                                    change.changedToUp()
-                                }
-
-                                TransformImageGesture.RIGHT_SWIPE -> {
-
-                                    onRightSwipe()
-                                    change.changedToUp()
-                                }
-
-                                else -> {}
-                            }
-
-                            dragSwipeMinimum = 0.0F
-                        }
-
-                        else -> {
-
-                            dragSwipeMinimum = 0.0F
-                            imageGesture = TransformImageGesture.INIT
-                            change.changedToUp()
-                            return@detectHorizontalDragGestures
-                        }
-                    }
-                }
-            },
+            .then(tapPointerInput)
+            .then(dragPointerInput),
         contentAlignment = Alignment.Center
     ) {
 
@@ -359,11 +318,11 @@ fun TransformImageView(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer(
-                    scaleX = transformData().zoom.coerceIn(range = zoomRange),
-                    scaleY = transformData().zoom.coerceIn(range = zoomRange),
-                    translationX = transformData().positionX,
-                    translationY = transformData().positionY,
-                    rotationZ = transformData().rotation.toFloat()
+                    scaleX = state.zoom.coerceIn(range = state.zoomRange),
+                    scaleY = state.zoom.coerceIn(range = state.zoomRange),
+                    translationX = state.position.x,
+                    translationY = state.position.y,
+                    rotationZ = state.rotation.toFloat()
                 ),
             model = imageModel(),
             contentScale = contentScale,
@@ -400,13 +359,6 @@ fun TransformImageView(
 
 /**
  * Enum class representing the possible gestures for transforming an image.
- *
- * [INIT] - Initial state, no gesture is active.
- * [PAN] - Panning gesture, moving the image around.
- * [ZOOM] - Zooming gesture, scaling the image up or down.
- * [ROTATION] - Rotation gesture, rotating the image.
- * [LEFT_SWIPE] - Left swipe gesture.
- * [RIGHT_SWIPE] - Right swipe gesture.
  */
 private enum class TransformImageGesture {
 
@@ -415,5 +367,5 @@ private enum class TransformImageGesture {
     ZOOM,
     ROTATION,
     LEFT_SWIPE,
-    RIGHT_SWIPE
+    RIGHT_SWIPE;
 }

@@ -33,8 +33,8 @@ import io.bashpsk.imagekrop.crop.ImageKrop
 import io.bashpsk.imagekrop.crop.KropConfig
 import io.bashpsk.imagekrop.crop.KropResult
 import io.bashpsk.imagekrop.crop.KropShape
-import io.bashpsk.imagekrop.view.ImageTransformData
 import io.bashpsk.imagekrop.view.TransformImageView
+import io.bashpsk.imagekrop.view.rememberImageTransformState
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 
@@ -43,6 +43,7 @@ fun ImageCropDemoScreen() {
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val imageTransformState = rememberImageTransformState()
 
     val imageBitmap = ImageBitmap.imageResource(R.drawable.wallpaper02)
 
@@ -50,7 +51,6 @@ fun ImageCropDemoScreen() {
     var kropResult by remember { mutableStateOf<KropResult>(value = KropResult.Init) }
 
     var selectedImage by remember { mutableStateOf(imageBitmap) }
-    var transformData by remember { mutableStateOf(value = ImageTransformData()) }
 
     val handleColor = MaterialTheme.colorScheme.onSurface
     val targetColor = MaterialTheme.colorScheme.surfaceTint
@@ -138,11 +138,7 @@ fun ImageCropDemoScreen() {
                 TransformImageView(
                     modifier = Modifier.weight(weight = 1.0F),
                     imageModel = { selectedImage.asAndroidBitmap() },
-                    transformData = { transformData },
-                    onTransformDataChange = { transform ->
-
-                        transformData = transform
-                    }
+                    state = imageTransformState
                 )
 
                 Button(

@@ -43,9 +43,9 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.bashpsk.imagekrop.view.ImageTransformData
 import io.bashpsk.imagekrop.view.TransformImageConfig
 import io.bashpsk.imagekrop.view.TransformImageView
+import io.bashpsk.imagekrop.view.rememberImageTransformState
 import kotlinx.coroutines.launch
 
 /**
@@ -65,9 +65,9 @@ internal fun KropImagePreview(
 ) {
 
     val sheetCoroutineScope = rememberCoroutineScope()
+    val transformConfig = remember { TransformImageConfig(enableRotation = false) }
+    val imageTransformState = rememberImageTransformState(config = transformConfig)
 
-    val transformConfig = remember { TransformImageConfig(isRotationEnabled = false) }
-    var transformData by remember { mutableStateOf(value = ImageTransformData()) }
     var isOriginalImage by remember { mutableStateOf(value = false) }
 
     val selectedImage by remember(originalImageBitmap, modifiedImageBitmap) {
@@ -106,25 +106,21 @@ internal fun KropImagePreview(
                 ) {
 
                     TransformImageView(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .aspectRatio(selectedImage.width.toFloat() / selectedImage.height),
                         imageModel = { selectedImage.asAndroidBitmap() },
-                        transformData = { transformData },
-                        onTransformDataChange = { transform ->
-
-                            transformData = transform
-                        },
+                        state = imageTransformState,
                         onLeftSwipe = {
 
-                            transformData = ImageTransformData()
+                            imageTransformState.resetAllValues()
                             isOriginalImage = isOriginalImage.not()
                         },
                         onRightSwipe = {
 
-                            transformData = ImageTransformData()
+                            imageTransformState.resetAllValues()
                             isOriginalImage = isOriginalImage.not()
-                        },
-                        transformConfig = { transformConfig }
+                        }
                     )
 
                     Card(
@@ -156,7 +152,7 @@ internal fun KropImagePreview(
                         isOriginalImage = isOriginalImage,
                         onShowImageBitmap = { isVisible ->
 
-                            transformData = ImageTransformData()
+                            imageTransformState.resetAllValues()
                             isOriginalImage = isVisible
                         }
                     )

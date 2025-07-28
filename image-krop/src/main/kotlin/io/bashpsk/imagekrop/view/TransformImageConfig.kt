@@ -12,17 +12,17 @@ import kotlinx.serialization.Serializable
  * features such as zooming, rotation, panning, and swiping. It is designed to be immutable,
  * parcelable for Android, and serializable for data persistence or transfer.
  *
- * @property isZoomEnabled Whether zooming the image is allowed. Defaults to `true`.
- * @property isRotationEnabled Whether rotating the image is allowed. Defaults to `true`.
- * @property isPanEnabled Whether panning (moving) the image is allowed. Defaults to `true`.
- * @property isSwipeEnabled Whether swiping gestures on the image are allowed. Defaults to `false`.
+ * @property enableZoom Whether zooming the image is allowed. Defaults to `true`.
+ * @property enableRotation Whether rotating the image is allowed. Defaults to `true`.
+ * @property enablePan Whether panning (moving) the image is allowed. Defaults to `true`.
+ * @property enableSwipe Whether swiping gestures on the image are allowed. Defaults to `false`.
  */
 @Immutable
 @Parcelize
 @Serializable
 data class TransformImageConfig(
-    val isZoomEnabled: Boolean = true,
-    val isRotationEnabled: Boolean = true,
-    val isPanEnabled: Boolean = true,
-    val isSwipeEnabled: Boolean = false
+    val enableZoom: Boolean = true,
+    val enableRotation: Boolean = true,
+    val enablePan: Boolean = true,
+    val enableSwipe: Boolean = false
 ) : Parcelable
