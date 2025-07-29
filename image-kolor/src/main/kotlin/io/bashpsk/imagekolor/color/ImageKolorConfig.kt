@@ -1,6 +1,9 @@
 package io.bashpsk.imagekolor.color
 
+import android.os.Parcelable
 import androidx.compose.runtime.Immutable
+import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 
 /**
  * Configuration class for image color adjustments.
@@ -19,6 +22,8 @@ import androidx.compose.runtime.Immutable
  * @property enableTint Whether tint adjustment is enabled.
  */
 @Immutable
+@Parcelize
+@Serializable
 data class ImageKolorConfig(
     val enableBrightness: Boolean = true,
     val enableExposure: Boolean = true,
@@ -28,4 +33,4 @@ data class ImageKolorConfig(
     val enableSaturation: Boolean = true,
     val enableWarmth: Boolean = true,
     val enableTint: Boolean = true
-)
+) : Parcelable

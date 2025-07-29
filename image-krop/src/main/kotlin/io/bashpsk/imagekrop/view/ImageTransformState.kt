@@ -5,15 +5,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 
 /**
- * Remembers and creates an [ImageTransformState] with the given [zoomRange] and [config].
+ * Remembers and creates an [ImageTransformState] with the given [zoomRange] and [config]
+ * that survives configuration changes.
  *
- * This function is a composable function that uses [remember] to ensure that the
- * [ImageTransformState] is preserved across recompositions.
+ * This function is a composable function that uses [rememberSaveable] to ensure that the
+ * [ImageTransformState] is preserved across recompositions and configuration changes.
  *
  * @param zoomRange The range of allowed zoom values. Defaults to 0.4F..8.0F.
  * @param config The configuration for image transformation. Defaults to a default
@@ -26,7 +28,7 @@ fun rememberImageTransformState(
     config: TransformImageConfig = TransformImageConfig()
 ): ImageTransformState {
 
-    return remember(zoomRange, config) {
+    return rememberSaveable(zoomRange, config, saver = ImageTransformState.StateSaver) {
         ImageTransformState(zoomRange = zoomRange, config = config)
     }
 }
@@ -99,5 +101,43 @@ class ImageTransformState(
     fun resetPosition() {
 
         position = Offset.Zero
+    }
+
+    companion object {
+
+        val StateSaver: Saver<ImageTransformState, List<Any?>> = Saver(
+            save = { state ->
+
+                listOf(
+                    state.zoomRange,
+                    state.config,
+                    state.zoom,
+                    state.rotation,
+                    state.position
+                )
+            },
+            restore = { elements ->
+
+                val savedZoomRange = elements.getOrNull(0) as? ClosedFloatingPointRange<Float>
+                    ?: 0.4F..8.0F
+
+                val savedConfig = elements.getOrNull(1) as? TransformImageConfig
+                    ?: TransformImageConfig()
+
+                val savedZoom = elements.getOrNull(2) as? Float ?: 1.0F
+                val savedRotation = elements.getOrNull(3) as? Int ?: 0
+                val savedPosition = elements.getOrNull(4) as? Offset ?: Offset.Zero
+
+                ImageTransformState(
+                    zoomRange = savedZoomRange,
+                    config = savedConfig
+                ).apply {
+
+                    zoom = savedZoom
+                    rotation = savedRotation
+                    position = savedPosition
+                }
+            }
+        )
     }
 }

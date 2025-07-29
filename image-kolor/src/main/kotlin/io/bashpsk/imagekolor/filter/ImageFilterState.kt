@@ -4,14 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.res.imageResource
-import io.bashpsk.imagekolor.R
 
 /**
- * Creates and remembers an [ImageFilterState] instance.
+ * Creates and remembers an [ImageFilterState] instance that survives configuration changes.
  *
  * This composable function is used to manage the state of image filters,
  * including the currently selected filter and the preview image.
@@ -24,9 +23,10 @@ import io.bashpsk.imagekolor.R
 @Composable
 fun rememberImageFilterState(previewImage: ImageBitmap? = null): ImageFilterState {
 
-    val imageBitmap = previewImage ?: ImageBitmap.imageResource(R.drawable.flower_02)
+    return rememberSaveable(previewImage, saver = ImageFilterState.StateSaver) {
 
-    return remember(imageBitmap) { ImageFilterState(previewImage = imageBitmap) }
+        ImageFilterState(previewImage = previewImage)
+    }
 }
 
 /**
@@ -35,13 +35,36 @@ fun rememberImageFilterState(previewImage: ImageBitmap? = null): ImageFilterStat
  * @param previewImage The image to be displayed and filtered.
  */
 @Stable
-class ImageFilterState(val previewImage: ImageBitmap) {
+class ImageFilterState(val previewImage: ImageBitmap?) {
 
     var selectedFilter by mutableStateOf(ImageFilterType.Original)
         private set
 
     fun onSelectFilter(filter: ImageFilterType) {
-
         selectedFilter = filter
+    }
+
+    companion object {
+
+        val StateSaver = Saver<ImageFilterState, List<Any?>>(
+            save = { state ->
+
+                listOf(state.previewImage, state.selectedFilter)
+            },
+            restore = { elements ->
+
+                val savedPreviewImage=elements.getOrNull(0) as? ImageBitmap
+
+                val savedSelectedFilter = elements.getOrNull(1) as? ImageFilterType
+                    ?: ImageFilterType.Original
+
+                ImageFilterState(
+                    previewImage = savedPreviewImage
+                ).apply {
+
+                    selectedFilter = savedSelectedFilter
+                }
+            }
+        )
     }
 }

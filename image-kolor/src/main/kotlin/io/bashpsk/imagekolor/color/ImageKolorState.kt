@@ -4,7 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -12,12 +13,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import kotlin.math.pow
 
 /**
- * Remembers and creates an [ImageKolorState] instance.
+ * Remembers and creates an [ImageKolorState] instance that can survive configuration changes.
  *
  * This composable function is used to create and manage the state for image color adjustments.
  * It takes an [ImageBitmap] and an optional [ImageKolorConfig] as input.
- * The state is remembered across recompositions, and will be re-initialized if the [imageBitmap]
- * changes.
+ * The state is remembered across recompositions and configuration changes.
  *
  * @param imageBitmap The [ImageBitmap] to apply color adjustments to. Can be null if no image is
  * loaded.
@@ -32,7 +32,9 @@ fun rememberImageKolorState(
     config: ImageKolorConfig = ImageKolorConfig()
 ): ImageKolorState {
 
-    return remember(imageBitmap) { ImageKolorState(imageBitmap = imageBitmap, config = config) }
+    return rememberSaveable(imageBitmap, config, saver = ImageKolorState.StateSaver) {
+        ImageKolorState(imageBitmap = imageBitmap, config = config)
+    }
 }
 
 /**
@@ -46,7 +48,8 @@ fun rememberImageKolorState(
  *
  * @property brightness Controls the overall lightness or darkness of the image.
  * Value typically ranges from -1F (darker) to 1F (lighter), with 0F being the original brightness.
- * @property exposure Controls the exposure level of the image, simulating changes in camera exposure.
+ * @property exposure Controls the exposure level of the image, simulating changes in camera
+ * exposure.
  * Value typically ranges from -1F (underexposed) to 1F (overexposed), with 0F being the original
  * exposure.
  * @property contrast Controls the difference between light and dark areas of the image.
@@ -388,5 +391,55 @@ class ImageKolorState(val imageBitmap: ImageBitmap?, val config: ImageKolorConfi
         )
 
         return ColorMatrix(matrixArray)
+    }
+
+    companion object {
+
+        val StateSaver: Saver<ImageKolorState, List<Any?>> = Saver(
+            save = { state ->
+
+                listOf(
+                    state.imageBitmap,
+                    state.config,
+                    state.brightness,
+                    state.exposure,
+                    state.contrast,
+                    state.highlights,
+                    state.shadows,
+                    state.saturation,
+                    state.warmth,
+                    state.tint
+                )
+            },
+            restore = { elements ->
+
+                val savedImageBitmap = elements.getOrNull(0) as? ImageBitmap
+                val savedConfig = elements.getOrNull(1) as? ImageKolorConfig ?: ImageKolorConfig()
+
+                val savedBrightness = elements.getOrNull(2) as? Float ?: 0.0F
+                val savedExposure = elements.getOrNull(3) as? Float ?: 0.0F
+                val savedContrast = elements.getOrNull(4) as? Float ?: 1.0F
+                val savedHighlights = elements.getOrNull(5) as? Float ?: 0.0F
+                val savedShadows = elements.getOrNull(6) as? Float ?: 0.0F
+                val savedSaturation = elements.getOrNull(7) as? Float ?: 1.0F
+                val savedWarmth = elements.getOrNull(8) as? Float ?: 0.0F
+                val savedTint = elements.getOrNull(9) as? Float ?: 0.0F
+
+                ImageKolorState(
+                    imageBitmap = savedImageBitmap,
+                    config = savedConfig
+                ).apply {
+
+                    brightness = savedBrightness
+                    exposure = savedExposure
+                    contrast = savedContrast
+                    highlights = savedHighlights
+                    shadows = savedShadows
+                    saturation = savedSaturation
+                    warmth = savedWarmth
+                    tint = savedTint
+                }
+            }
+        )
     }
 }

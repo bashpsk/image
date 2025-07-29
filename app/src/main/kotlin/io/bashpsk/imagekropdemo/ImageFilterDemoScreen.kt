@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImageColorFilterDemoScreen() {
+fun ImageFilterDemoScreen() {
 
     val context = LocalContext.current
     val bitmapCoroutineScope = rememberCoroutineScope()
