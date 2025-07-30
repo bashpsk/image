@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material3.Button
@@ -35,10 +36,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,25 +54,23 @@ import kotlinx.coroutines.launch
  * sheet.
  *
  * @param sheetState The state of the modal bottom sheet.
- * @param originalImageBitmap The original image bitmap.
- * @param modifiedImageBitmap The modified image bitmap.
+ * @param state The [ImageKropState] containing the original and modified image bitmaps.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun KropImagePreview(
     sheetState: SheetState,
-    originalImageBitmap: ImageBitmap,
-    modifiedImageBitmap: ImageBitmap,
+    state: ImageKropState
 ) {
 
     val sheetCoroutineScope = rememberCoroutineScope()
-    val transformConfig = remember { TransformImageConfig(enableRotation = false) }
+    val transformConfig = rememberSaveable { TransformImageConfig(enableRotation = false) }
     val imageTransformState = rememberImageTransformState(config = transformConfig)
 
-    var isOriginalImage by remember { mutableStateOf(value = false) }
+    var isOriginalImage by rememberSaveable { mutableStateOf(value = false) }
 
-    val selectedImage by remember(originalImageBitmap, modifiedImageBitmap) {
-        derivedStateOf { if (isOriginalImage) originalImageBitmap else modifiedImageBitmap }
+    val selectedImage by remember(state) {
+        derivedStateOf { if (isOriginalImage) state.imageBitmap else state.modifiedImage }
     }
 
     val titleCardColors = CardDefaults.cardColors(
@@ -100,63 +99,73 @@ internal fun KropImagePreview(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                Box(
-                    modifier = Modifier.wrapContentSize(),
-                    contentAlignment = Alignment.TopCenter
-                ) {
+                selectedImage?.let { bitmap ->
 
-                    TransformImageView(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(selectedImage.width.toFloat() / selectedImage.height),
-                        imageModel = { selectedImage.asAndroidBitmap() },
-                        state = imageTransformState,
-                        onLeftSwipe = {
-
-                            imageTransformState.resetAllValues()
-                            isOriginalImage = isOriginalImage.not()
-                        },
-                        onRightSwipe = {
-
-                            imageTransformState.resetAllValues()
-                            isOriginalImage = isOriginalImage.not()
-                        }
-                    )
-
-                    Card(
-                        modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp),
-                        colors = titleCardColors,
-                        shape = MaterialTheme.shapes.extraSmall
+                    Box(
+                        modifier = Modifier.wrapContentSize(),
+                        contentAlignment = Alignment.TopCenter
                     ) {
 
-                        Text(
+                        TransformImageView(
                             modifier = Modifier
-                                .wrapContentSize()
-                                .padding(vertical = 4.dp, horizontal = 8.dp),
-                            text = if (isOriginalImage) "Original" else "Modified",
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.labelLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                                .fillMaxWidth()
+                                .aspectRatio(bitmap.width.toFloat() / bitmap.height),
+                            imageModel = { bitmap.asAndroidBitmap() },
+                            state = imageTransformState,
+                            onLeftSwipe = {
+
+                                imageTransformState.resetAllValues()
+                                isOriginalImage = isOriginalImage.not()
+                            },
+                            onRightSwipe = {
+
+                                imageTransformState.resetAllValues()
+                                isOriginalImage = isOriginalImage.not()
+                            }
+                        )
+
+                        Card(
+                            modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp),
+                            colors = titleCardColors,
+                            shape = MaterialTheme.shapes.extraSmall
+                        ) {
+
+                            Text(
+                                modifier = Modifier
+                                    .wrapContentWidth()
+                                    .padding(vertical = 4.dp, horizontal = 8.dp),
+                                text = if (isOriginalImage) "Original" else "Modified",
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+
+                        ImageCompareButton(
+                            isOriginalImage = isOriginalImage,
+                            onShowImageBitmap = { isVisible ->
+
+                                imageTransformState.resetAllValues()
+                                isOriginalImage = isVisible
+                            }
                         )
                     }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-
-                    ImageCompareButton(
-                        isOriginalImage = isOriginalImage,
-                        onShowImageBitmap = { isVisible ->
-
-                            imageTransformState.resetAllValues()
-                            isOriginalImage = isVisible
-                        }
-                    )
-                }
+                } ?: Text(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .padding(vertical = 4.dp, horizontal = 8.dp),
+                    text = "Image Not Found",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.headlineSmall
+                )
             }
         }
     }

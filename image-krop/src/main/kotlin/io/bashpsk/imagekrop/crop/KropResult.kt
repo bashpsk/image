@@ -22,16 +22,13 @@ sealed interface KropResult {
      * Represents a failed crop operation.
      *
      * @property message A message describing the reason for the failure.
-     * @property original The original [ImageBitmap] that was attempted to be cropped, or null if
-     * not available.
      */
-    data class Failed(val message: String, val original: ImageBitmap?) : KropResult
+    data class Failed(val message: String) : KropResult
 
     /**
      * Represents a successful crop operation.
      *
-     * @property cropped The resulting cropped image.
-     * @property original The original image that was cropped.
+     * @property bitmap The resulting cropped image.
      */
-    data class Success(val cropped: ImageBitmap, val original: ImageBitmap) : KropResult
+    data class Success(val bitmap: ImageBitmap) : KropResult
 }

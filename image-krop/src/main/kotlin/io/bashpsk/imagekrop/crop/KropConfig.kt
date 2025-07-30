@@ -10,8 +10,8 @@ import androidx.compose.ui.unit.dp
  *
  * @property handleWidth The width of the corner and side drag handles.
  * @property handleHeight The height of the corner and side drag handles.
- * @property centerHandleWidth The width of the center drag handle (used for moving the entire crop
- * area).
+ * @property centerHandleWidth The width of the center drag handle
+ * (used for moving the entire crop area).
  * @property minimumCropSize The minimum allowable size (width or height) for the crop selection.
  * @property handleColor The color of the drag handles.
  * @property borderThickness The thickness of the border around the crop selection.

@@ -3,14 +3,11 @@ package io.bashpsk.imagekrop.crop
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,7 +15,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,17 +22,13 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.IntSize
-import io.bashpsk.imagekrop.R
 import io.bashpsk.imagekrop.offset.hasNeared
-import kotlinx.collections.immutable.ImmutableList
 import kotlin.math.abs
 
 /**
@@ -47,83 +39,61 @@ import kotlin.math.abs
  * for selecting the crop area and applying the crop.
  *
  * @param modifier Optional [Modifier] for the root Composable.
- * @param imageBitmap The [ImageBitmap] to be cropped. If null, a placeholder "broken image"
- *   will be displayed.
- * @param kropConfig The [KropConfig] to customize the appearance and behavior of the cropping
- *   interface. Defaults to a standard [KropConfig].
- * @param kropShapeList An optional [ImmutableList] of [KropShape]s that the user can select from.
- *   If null or empty, the shape selection UI might be hidden or default to a single shape.
- * @param onImageKropDone A callback function that is invoked when the user finalizes the crop.
- *   It receives a [KropResult] object containing the cropped image and its details.
+ * @param state The [ImageKropState] that holds the current state of the cropping UI,
+ * including the image bitmap, configuration, and crop selection.
  * @param onNavigateBack A callback function that is invoked when the user initiates a back
- *   navigation action, typically by pressing a back button in the UI. Defaults to an empty lambda.
+ * navigation action, typically by pressing a back button in the UI.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun ImageKrop(
     modifier: Modifier = Modifier,
-    imageBitmap: ImageBitmap?,
-    kropConfig: KropConfig = KropConfig(),
-    kropShapeList: ImmutableList<KropShape>? = null,
-    onImageKropDone: (result: KropResult) -> Unit,
-    onNavigateBack: () -> Unit = {}
+    state: ImageKropState,
+    onNavigateBack: () -> Unit
 ) {
 
     val density = LocalDensity.current
-    val snackbarHostState = remember { SnackbarHostState() }
-    val snackbarCoroutineScope = rememberCoroutineScope()
     val imagePreviewSheetState = rememberModalBottomSheetState()
 
-    val imageBitmapBroken = ImageBitmap.imageResource(id = R.drawable.image_broken)
-
-    val originalImageBitmap by remember(imageBitmap, imageBitmapBroken) {
-        derivedStateOf { imageBitmap ?: imageBitmapBroken }
+    val topCenter by remember(state) {
+        derivedStateOf { Offset((state.topLeft.x + state.topRight.x) / 2, state.topLeft.y) }
     }
 
-    var isRefreshing by remember { mutableStateOf(false) }
-    var modifiedImageBitmap by remember { mutableStateOf(originalImageBitmap) }
-
-    var topLeft by remember { mutableStateOf(Offset.Zero) }
-    var topRight by remember { mutableStateOf(Offset.Zero) }
-    var bottomLeft by remember { mutableStateOf(Offset.Zero) }
-    var bottomRight by remember { mutableStateOf(Offset.Zero) }
-
-    val topCenter by remember {
-        derivedStateOf { Offset((topLeft.x + topRight.x) / 2, topLeft.y) }
-    }
-
-    val bottomCenter by remember {
-        derivedStateOf { Offset((bottomLeft.x + bottomRight.x) / 2, bottomLeft.y) }
-    }
-
-    val leftCenter by remember {
-        derivedStateOf { Offset(topLeft.x, (topLeft.y + bottomLeft.y) / 2) }
-    }
-
-    val rightCenter by remember {
-        derivedStateOf { Offset(topRight.x, (topRight.y + bottomRight.y) / 2) }
-    }
-
-    var kropCorner by remember { mutableStateOf<KropCorner?>(null) }
-    var kropAspectRatio by remember { mutableStateOf(KropAspectRatio.Square) }
-    var isMovingCropRect by remember { mutableStateOf(false) }
-    var isAspectLocked by remember { mutableStateOf(false) }
-    var kropShape by remember { mutableStateOf(KropShape.SharpeCorner) }
-    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
-
-    val rectSize by remember {
-        derivedStateOf { Size(width = topRight.x - topLeft.x, height = bottomLeft.y - topLeft.y) }
-    }
-
-    val threshold by remember(kropConfig, density) {
+    val bottomCenter by remember(state) {
         derivedStateOf {
-            maxOf(kropConfig.handleWidth, kropConfig.handleHeight).toPixel(density = density)
+            Offset((state.bottomLeft.x + state.bottomRight.x) / 2, state.bottomLeft.y)
         }
     }
 
-    val cropSizeLimit by remember(kropConfig, density) {
-        derivedStateOf { kropConfig.minimumCropSize.toPixel(density = density) }
+    val leftCenter by remember(state) {
+        derivedStateOf { Offset(state.topLeft.x, (state.topLeft.y + state.bottomLeft.y) / 2) }
+    }
+
+    val rightCenter by remember(state) {
+        derivedStateOf { Offset(state.topRight.x, (state.topRight.y + state.bottomRight.y) / 2) }
+    }
+
+    var isAspectLocked by remember { mutableStateOf(false) }
+    var kropShape by remember { mutableStateOf(KropShape.SharpeCorner) }
+
+    val rectSize by remember {
+        derivedStateOf {
+            Size(
+                width = state.topRight.x - state.topLeft.x,
+                height = state.bottomLeft.y - state.topLeft.y
+            )
+        }
+    }
+
+    val threshold by remember(state, density) {
+        derivedStateOf {
+            maxOf(state.config.handleWidth, state.config.handleHeight).toPixel(density = density)
+        }
+    }
+
+    val cropSizeLimit by remember(state.config, density) {
+        derivedStateOf { state.config.minimumCropSize.toPixel(density = density) }
     }
 
     val pointerInputWithoutAspect = Modifier.pointerInput(Unit) {
@@ -131,25 +101,25 @@ fun ImageKrop(
         detectDragGestures(
             onDragStart = { offset ->
 
-                kropCorner = when {
+                state.kropCorner = when {
 
                     offset.hasNeared(
-                        point = topLeft,
+                        point = state.topLeft,
                         threshold = threshold
                     ) -> KropCorner.TOP_LEFT
 
                     offset.hasNeared(
-                        point = topRight,
+                        point = state.topRight,
                         threshold = threshold
                     ) -> KropCorner.TOP_RIGHT
 
                     offset.hasNeared(
-                        point = bottomLeft,
+                        point = state.bottomLeft,
                         threshold = threshold
                     ) -> KropCorner.BOTTOM_LEFT
 
                     offset.hasNeared(
-                        point = bottomRight,
+                        point = state.bottomRight,
                         threshold = threshold
                     ) -> KropCorner.BOTTOM_RIGHT
 
@@ -176,15 +146,15 @@ fun ImageKrop(
                     else -> null
                 }
 
-                isMovingCropRect = kropCorner == null && Rect(
-                    topLeft = topLeft,
-                    bottomRight = bottomRight
+                state.isMovingCropRect = state.kropCorner == null && Rect(
+                    topLeft = state.topLeft,
+                    bottomRight = state.bottomRight
                 ).contains(offset)
             },
             onDragEnd = {
 
-                kropCorner = null
-                isMovingCropRect = false
+                state.kropCorner = null
+                state.isMovingCropRect = false
             },
             onDrag = { change, dragAmount ->
 
@@ -192,190 +162,196 @@ fun ImageKrop(
 
                 val minX = 0F
                 val minY = 0F
-                val maxX = canvasSize.width.toFloat()
-                val maxY = canvasSize.height.toFloat()
+                val maxX = state.canvasSize.width.toFloat()
+                val maxY = state.canvasSize.height.toFloat()
 
-                when (kropCorner) {
+                when (state.kropCorner) {
 
                     KropCorner.TOP_LEFT -> {
 
-                        val potentialWidth = bottomRight.x - (topLeft.x + dragAmount.x)
-                        val potentialHeight = bottomRight.y - (topLeft.y + dragAmount.y)
+                        val potentialWidth = state.bottomRight.x - (state.topLeft.x + dragAmount.x)
+                        val potentialHeight = state.bottomRight.y - (state.topLeft.y + dragAmount.y)
 
                         if (potentialWidth >= cropSizeLimit && potentialHeight >= cropSizeLimit) {
 
-                            val newX = (topLeft.x + dragAmount.x).coerceIn(
-                                minX..bottomRight.x - cropSizeLimit
+                            val newX = (state.topLeft.x + dragAmount.x).coerceIn(
+                                minX..state.bottomRight.x - cropSizeLimit
                             )
 
-                            val newY = (topLeft.y + dragAmount.y).coerceIn(
-                                minY..bottomRight.y - cropSizeLimit
+                            val newY = (state.topLeft.y + dragAmount.y).coerceIn(
+                                minY..state.bottomRight.y - cropSizeLimit
                             )
 
-                            topLeft = Offset(newX, newY)
-                            topRight = topRight.copy(y = newY)
-                            bottomLeft = bottomLeft.copy(x = newX)
+                            state.topLeft = Offset(newX, newY)
+                            state.topRight = state.topRight.copy(y = newY)
+                            state.bottomLeft = state.bottomLeft.copy(x = newX)
                         }
                     }
 
                     KropCorner.TOP_RIGHT -> {
 
-                        val potentialWidth = (topRight.x + dragAmount.x) - bottomLeft.x
-                        val potentialHeight = bottomRight.y - (topRight.y + dragAmount.y)
+                        val potentialWidth = (state.topRight.x + dragAmount.x) - state.bottomLeft.x
+                        val potentialHeight = state.bottomRight.y
+                        -(state.topRight.y + dragAmount.y)
 
                         if (potentialWidth >= cropSizeLimit && potentialHeight >= cropSizeLimit) {
 
-                            val newX = (topRight.x + dragAmount.x).coerceIn(
-                                topLeft.x + cropSizeLimit..maxX
+                            val newX = (state.topRight.x + dragAmount.x).coerceIn(
+                                state.topLeft.x + cropSizeLimit..maxX
                             )
 
-                            val newY = (topRight.y + dragAmount.y).coerceIn(
-                                minY..bottomLeft.y - cropSizeLimit
+                            val newY = (state.topRight.y + dragAmount.y).coerceIn(
+                                minY..state.bottomLeft.y - cropSizeLimit
                             )
 
-                            topRight = Offset(newX, newY)
-                            topLeft = topLeft.copy(y = newY)
-                            bottomRight = bottomRight.copy(x = newX)
+                            state.topRight = Offset(newX, newY)
+                            state.topLeft = state.topLeft.copy(y = newY)
+                            state.bottomRight = state.bottomRight.copy(x = newX)
                         }
                     }
 
                     KropCorner.BOTTOM_LEFT -> {
 
-                        val potentialWidth = bottomRight.x - (bottomLeft.x + dragAmount.x)
-                        val potentialHeight = (bottomLeft.y + dragAmount.y) - topRight.y
+                        val potentialWidth = state.bottomRight.x
+                        -(state.bottomLeft.x + dragAmount.x)
+                        val potentialHeight = (state.bottomLeft.y + dragAmount.y) - state.topRight.y
 
                         if (potentialWidth >= cropSizeLimit && potentialHeight >= cropSizeLimit) {
 
-                            val newX = (bottomLeft.x + dragAmount.x).coerceIn(
-                                minX..bottomRight.x - cropSizeLimit
+                            val newX = (state.bottomLeft.x + dragAmount.x).coerceIn(
+                                minX..state.bottomRight.x - cropSizeLimit
                             )
 
-                            val newY = (bottomLeft.y + dragAmount.y).coerceIn(
-                                topLeft.y + cropSizeLimit..maxY
+                            val newY = (state.bottomLeft.y + dragAmount.y).coerceIn(
+                                state.topLeft.y + cropSizeLimit..maxY
                             )
 
-                            bottomLeft = Offset(newX, newY)
-                            topLeft = topLeft.copy(x = newX)
-                            bottomRight = bottomRight.copy(y = newY)
+                            state.bottomLeft = Offset(newX, newY)
+                            state.topLeft = state.topLeft.copy(x = newX)
+                            state.bottomRight = state.bottomRight.copy(y = newY)
                         }
                     }
 
                     KropCorner.BOTTOM_RIGHT -> {
 
-                        val potentialWidth = (bottomRight.x + dragAmount.x) - topLeft.x
-                        val potentialHeight = (bottomRight.y + dragAmount.y) - topLeft.y
+                        val potentialWidth = (state.bottomRight.x + dragAmount.x) - state.topLeft.x
+                        val potentialHeight = (state.bottomRight.y + dragAmount.y) - state.topLeft.y
 
                         if (potentialWidth >= cropSizeLimit && potentialHeight >= cropSizeLimit) {
 
-                            val newX = (bottomRight.x + dragAmount.x).coerceIn(
-                                bottomLeft.x + cropSizeLimit..maxX
+                            val newX = (state.bottomRight.x + dragAmount.x).coerceIn(
+                                state.bottomLeft.x + cropSizeLimit..maxX
                             )
 
-                            val newY = (bottomRight.y + dragAmount.y).coerceIn(
-                                topRight.y + cropSizeLimit..maxY
+                            val newY = (state.bottomRight.y + dragAmount.y).coerceIn(
+                                state.topRight.y + cropSizeLimit..maxY
                             )
 
-                            bottomRight = Offset(newX, newY)
-                            topRight = topRight.copy(x = newX)
-                            bottomLeft = bottomLeft.copy(y = newY)
+                            state.bottomRight = Offset(newX, newY)
+                            state.topRight = state.topRight.copy(x = newX)
+                            state.bottomLeft = state.bottomLeft.copy(y = newY)
                         }
                     }
 
                     KropCorner.TOP_CENTRE -> {
 
-                        val potentialHeight = bottomLeft.y - (topLeft.y + dragAmount.y)
+                        val potentialHeight = state.bottomLeft.y - (state.topLeft.y + dragAmount.y)
 
                         if (potentialHeight >= cropSizeLimit) {
 
-                            val newY = (topLeft.y + dragAmount.y).coerceIn(
-                                minY..bottomLeft.y - cropSizeLimit
+                            val newY = (state.topLeft.y + dragAmount.y).coerceIn(
+                                minY..state.bottomLeft.y - cropSizeLimit
                             )
 
-                            topLeft = topLeft.copy(y = newY)
-                            topRight = topRight.copy(y = newY)
+                            state.topLeft = state.topLeft.copy(y = newY)
+                            state.topRight = state.topRight.copy(y = newY)
                         }
                     }
 
                     KropCorner.LEFT_CENTRE -> {
 
-                        val potentialWidth = bottomRight.x - (topLeft.x + dragAmount.x)
+                        val potentialWidth = state.bottomRight.x - (state.topLeft.x + dragAmount.x)
 
                         if (potentialWidth >= cropSizeLimit) {
 
-                            val newX = (topLeft.x + dragAmount.x).coerceIn(
-                                minX..bottomRight.x - cropSizeLimit
+                            val newX = (state.topLeft.x + dragAmount.x).coerceIn(
+                                minX..state.bottomRight.x - cropSizeLimit
                             )
 
-                            topLeft = topLeft.copy(x = newX)
-                            bottomLeft = bottomLeft.copy(x = newX)
+                            state.topLeft = state.topLeft.copy(x = newX)
+                            state.bottomLeft = state.bottomLeft.copy(x = newX)
                         }
                     }
 
                     KropCorner.RIGHT_CENTRE -> {
 
-                        val potentialWidth = (topRight.x + dragAmount.x) - topLeft.x
+                        val potentialWidth = (state.topRight.x + dragAmount.x) - state.topLeft.x
 
                         if (potentialWidth >= cropSizeLimit) {
 
-                            val newX = (topRight.x + dragAmount.x).coerceIn(
-                                topLeft.x + cropSizeLimit..maxX
+                            val newX = (state.topRight.x + dragAmount.x).coerceIn(
+                                state.topLeft.x + cropSizeLimit..maxX
                             )
 
-                            topRight = topRight.copy(x = newX)
-                            bottomRight = bottomRight.copy(x = newX)
+                            state.topRight = state.topRight.copy(x = newX)
+                            state.bottomRight = state.bottomRight.copy(x = newX)
                         }
                     }
 
                     KropCorner.BOTTOM_CENTRE -> {
 
-                        val potentialHeight = (bottomLeft.y + dragAmount.y) - topLeft.y
+                        val potentialHeight = (state.bottomLeft.y + dragAmount.y) - state.topLeft.y
 
                         if (potentialHeight >= cropSizeLimit) {
 
-                            val newY = (bottomLeft.y + dragAmount.y).coerceIn(
-                                topLeft.y + cropSizeLimit..maxY
+                            val newY = (state.bottomLeft.y + dragAmount.y).coerceIn(
+                                state.topLeft.y + cropSizeLimit..maxY
                             )
 
-                            bottomLeft = bottomLeft.copy(y = newY)
-                            bottomRight = bottomRight.copy(y = newY)
+                            state.bottomLeft = state.bottomLeft.copy(y = newY)
+                            state.bottomRight = state.bottomRight.copy(y = newY)
                         }
 
                     }
 
-                    null -> if (isMovingCropRect) {
+                    null -> if (state.isMovingCropRect) {
 
-                        val newTopLeftX = (topLeft.x + dragAmount.x).coerceIn(
+                        val newTopLeftX = (state.topLeft.x + dragAmount.x).coerceIn(
                             minX..maxX - rectSize.width
                         )
 
-                        val newTopLeftY = (topLeft.y + dragAmount.y).coerceIn(
+                        val newTopLeftY = (state.topLeft.y + dragAmount.y).coerceIn(
                             minY..maxY - rectSize.height
                         )
 
                         val newTopRightX = newTopLeftX + rectSize.width
                         val newBottomLeftY = newTopLeftY + rectSize.height
 
-                        topLeft = Offset(newTopLeftX, newTopLeftY)
-                        topRight = Offset(newTopRightX, newTopLeftY)
-                        bottomLeft = Offset(newTopLeftX, newBottomLeftY)
-                        bottomRight = Offset(newTopRightX, newBottomLeftY)
+                        state.topLeft = Offset(newTopLeftX, newTopLeftY)
+                        state.topRight = Offset(newTopRightX, newTopLeftY)
+                        state.bottomLeft = Offset(newTopLeftX, newBottomLeftY)
+                        state.bottomRight = Offset(newTopRightX, newBottomLeftY)
                     }
                 }
             }
         )
     }
 
-    val pointerInputWithAspect = Modifier.pointerInput(kropAspectRatio, canvasSize, cropSizeLimit) {
+    val pointerInputWithAspect = Modifier.pointerInput(
+        state.kropAspectRatio,
+        state.canvasSize,
+        cropSizeLimit
+    ) {
 
         detectDragGestures(
             onDragStart = { offset ->
 
-                kropCorner = when {
+                state.kropCorner = when {
 
-                    offset.hasNeared(topLeft, threshold) -> KropCorner.TOP_LEFT
-                    offset.hasNeared(topRight, threshold) -> KropCorner.TOP_RIGHT
-                    offset.hasNeared(bottomLeft, threshold) -> KropCorner.BOTTOM_LEFT
-                    offset.hasNeared(bottomRight, threshold) -> KropCorner.BOTTOM_RIGHT
+                    offset.hasNeared(state.topLeft, threshold) -> KropCorner.TOP_LEFT
+                    offset.hasNeared(state.topRight, threshold) -> KropCorner.TOP_RIGHT
+                    offset.hasNeared(state.bottomLeft, threshold) -> KropCorner.BOTTOM_LEFT
+                    offset.hasNeared(state.bottomRight, threshold) -> KropCorner.BOTTOM_RIGHT
                     offset.hasNeared(topCenter, threshold) -> KropCorner.TOP_CENTRE
                     offset.hasNeared(bottomCenter, threshold) -> KropCorner.BOTTOM_CENTRE
                     offset.hasNeared(leftCenter, threshold) -> KropCorner.LEFT_CENTRE
@@ -383,46 +359,49 @@ fun ImageKrop(
                     else -> null
                 }
 
-                isMovingCropRect = kropCorner == null && Rect(topLeft, bottomRight).contains(offset)
+                state.isMovingCropRect = state.kropCorner == null && Rect(
+                    topLeft = state.topLeft,
+                    bottomRight = state.bottomRight
+                ).contains(offset)
             },
             onDragEnd = {
 
-                kropCorner = null
-                isMovingCropRect = false
+                state.kropCorner = null
+                state.isMovingCropRect = false
             },
             onDrag = { change, dragAmount ->
 
                 change.consume()
 
-                if (canvasSize == IntSize.Zero) return@detectDragGestures
+                if (state.canvasSize == IntSize.Zero) return@detectDragGestures
 
-                val currentAspectRatio = kropAspectRatio.ratio ?: return@detectDragGestures
+                val aspectRatio = state.kropAspectRatio.ratio ?: return@detectDragGestures
 
                 val minX = 0.0F
                 val minY = 0.0F
-                val maxX = canvasSize.width.toFloat()
-                val maxY = canvasSize.height.toFloat()
+                val maxX = state.canvasSize.width.toFloat()
+                val maxY = state.canvasSize.height.toFloat()
 
-                when (kropCorner) {
+                when (state.kropCorner) {
 
                     KropCorner.TOP_LEFT, KropCorner.TOP_RIGHT, KropCorner.BOTTOM_LEFT,
                     KropCorner.BOTTOM_RIGHT -> {
 
-                        val anchorCorner = when (kropCorner) {
+                        val anchorCorner = when (state.kropCorner) {
 
-                            KropCorner.TOP_LEFT -> bottomRight
-                            KropCorner.TOP_RIGHT -> bottomLeft
-                            KropCorner.BOTTOM_LEFT -> topRight
-                            KropCorner.BOTTOM_RIGHT -> topLeft
+                            KropCorner.TOP_LEFT -> state.bottomRight
+                            KropCorner.TOP_RIGHT -> state.bottomLeft
+                            KropCorner.BOTTOM_LEFT -> state.topRight
+                            KropCorner.BOTTOM_RIGHT -> state.topLeft
                             else -> return@detectDragGestures
                         }
 
-                        val draggedCornerCurrent = when (kropCorner) {
+                        val draggedCornerCurrent = when (state.kropCorner) {
 
-                            KropCorner.TOP_LEFT -> topLeft
-                            KropCorner.TOP_RIGHT -> topRight
-                            KropCorner.BOTTOM_LEFT -> bottomLeft
-                            KropCorner.BOTTOM_RIGHT -> bottomRight
+                            KropCorner.TOP_LEFT -> state.topLeft
+                            KropCorner.TOP_RIGHT -> state.topRight
+                            KropCorner.BOTTOM_LEFT -> state.bottomLeft
+                            KropCorner.BOTTOM_RIGHT -> state.bottomRight
                             else -> return@detectDragGestures
                         }
 
@@ -430,8 +409,8 @@ fun ImageKrop(
                             draggedCornerCurrent = draggedCornerCurrent,
                             anchorCorner = anchorCorner,
                             dragDelta = dragAmount,
-                            cornerType = kropCorner!!,
-                            aspectRatio = currentAspectRatio,
+                            cornerType = state.kropCorner!!,
+                            aspectRatio = aspectRatio,
                             minSize = cropSizeLimit,
                             canvasWidth = maxX,
                             canvasHeight = maxY
@@ -456,26 +435,26 @@ fun ImageKrop(
                             var finalWidth = boundedBottomRightX - boundedTopLeftX
                             var finalHeight = boundedBottomRightY - boundedTopLeftY
 
-                            if (finalWidth / currentAspectRatio > finalHeight) {
+                            if (finalWidth / aspectRatio > finalHeight) {
 
-                                finalWidth = finalHeight * currentAspectRatio
+                                finalWidth = finalHeight * aspectRatio
                             } else {
 
-                                finalHeight = finalWidth / currentAspectRatio
+                                finalHeight = finalWidth / aspectRatio
                             }
 
                             if (finalWidth >= cropSizeLimit && finalHeight >= cropSizeLimit) {
 
-                                when (kropCorner) {
+                                when (state.kropCorner) {
 
                                     KropCorner.TOP_LEFT -> {
 
-                                        topLeft = Offset(
+                                        state.topLeft = Offset(
                                             x = boundedBottomRightX - finalWidth,
                                             y = boundedBottomRightY - finalHeight
                                         )
 
-                                        bottomRight = Offset(
+                                        state.bottomRight = Offset(
                                             x = boundedBottomRightX,
                                             y = boundedBottomRightY
                                         )
@@ -483,12 +462,12 @@ fun ImageKrop(
 
                                     KropCorner.TOP_RIGHT -> {
 
-                                        topLeft = Offset(
+                                        state.topLeft = Offset(
                                             x = boundedTopLeftX,
                                             y = boundedBottomRightY - finalHeight
                                         )
 
-                                        bottomRight = Offset(
+                                        state.bottomRight = Offset(
                                             x = boundedTopLeftX + finalWidth,
                                             y = boundedBottomRightY
                                         )
@@ -496,12 +475,12 @@ fun ImageKrop(
 
                                     KropCorner.BOTTOM_LEFT -> {
 
-                                        topLeft = Offset(
+                                        state.topLeft = Offset(
                                             x = boundedBottomRightX - finalWidth,
                                             y = boundedTopLeftY
                                         )
 
-                                        bottomRight = Offset(
+                                        state.bottomRight = Offset(
                                             x = boundedBottomRightX,
                                             y = boundedTopLeftY + finalHeight
                                         )
@@ -509,9 +488,12 @@ fun ImageKrop(
 
                                     KropCorner.BOTTOM_RIGHT -> {
 
-                                        topLeft = Offset(x = boundedTopLeftX, y = boundedTopLeftY)
+                                        state.topLeft = Offset(
+                                            x = boundedTopLeftX,
+                                            y = boundedTopLeftY
+                                        )
 
-                                        bottomRight = Offset(
+                                        state.bottomRight = Offset(
                                             x = boundedTopLeftX + finalWidth,
                                             y = boundedTopLeftY + finalHeight
                                         )
@@ -520,213 +502,230 @@ fun ImageKrop(
                                     else -> Unit
                                 }
 
-                                topRight = Offset(bottomRight.x, topLeft.y)
-                                bottomLeft = Offset(topLeft.x, bottomRight.y)
+                                state.topRight = Offset(state.bottomRight.x, state.topLeft.y)
+                                state.bottomLeft = Offset(state.topLeft.x, state.bottomRight.y)
                             }
                         }
                     }
 
                     KropCorner.TOP_CENTRE -> {
 
-                        val potentialNewTopY = topLeft.y + dragAmount.y
-                        val currentHeight = bottomRight.y - topLeft.y
-                        val currentWidth = bottomRight.x - topLeft.x
+                        val potentialNewTopY = state.topLeft.y + dragAmount.y
+                        val currentHeight = state.bottomRight.y - state.topLeft.y
+                        val currentWidth = state.bottomRight.x - state.topLeft.x
 
-                        var newHeight = (bottomRight.y - potentialNewTopY).coerceAtLeast(
+                        var newHeight = (state.bottomRight.y - potentialNewTopY).coerceAtLeast(
                             cropSizeLimit
                         )
 
-                        var newWidth = newHeight * currentAspectRatio
+                        var newWidth = newHeight * aspectRatio
 
-                        if (topLeft.x + newWidth > maxX) {
+                        if (state.topLeft.x + newWidth > maxX) {
 
-                            newWidth = maxX - topLeft.x
-                            newHeight = newWidth / currentAspectRatio
+                            newWidth = maxX - state.topLeft.x
+                            newHeight = newWidth / aspectRatio
                         }
 
                         if (newWidth < cropSizeLimit) {
 
                             newWidth = cropSizeLimit
-                            newHeight = newWidth / currentAspectRatio
+                            newHeight = newWidth / aspectRatio
                         }
 
-                        val newTopY = (bottomRight.y - newHeight).coerceIn(
-                            minY..bottomRight.y - cropSizeLimit
+                        val newTopY = (state.bottomRight.y - newHeight).coerceIn(
+                            minY..state.bottomRight.y - cropSizeLimit
                         )
 
-                        val finalHeight = bottomRight.y - newTopY
-                        val finalWidth = finalHeight * currentAspectRatio
+                        val finalHeight = state.bottomRight.y - newTopY
+                        val finalWidth = finalHeight * aspectRatio
 
                         if (finalHeight >= cropSizeLimit && finalWidth >= cropSizeLimit
-                            && topLeft.x + finalWidth <= maxX
+                            && state.topLeft.x + finalWidth <= maxX
                         ) {
 
                             val horizontalShift = (currentWidth - finalWidth) / 2
 
-                            topLeft = Offset(topLeft.x + horizontalShift, newTopY)
-                            topRight = Offset(bottomRight.x - horizontalShift, newTopY)
-                            bottomLeft = bottomLeft.copy(x = topLeft.x)
-                            bottomRight = bottomRight.copy(x = topRight.x)
+                            state.topLeft = Offset(state.topLeft.x + horizontalShift, newTopY)
+                            state.topRight = Offset(state.bottomRight.x - horizontalShift, newTopY)
+                            state.bottomLeft = state.bottomLeft.copy(x = state.topLeft.x)
+                            state.bottomRight = state.bottomRight.copy(x = state.topRight.x)
                         }
                     }
 
                     KropCorner.BOTTOM_CENTRE -> {
 
-                        val potentialNewBottomY = bottomRight.y + dragAmount.y
-                        val currentHeight = bottomRight.y - topLeft.y
-                        val currentWidth = bottomRight.x - topLeft.x
+                        val potentialNewBottomY = state.bottomRight.y + dragAmount.y
+                        val currentHeight = state.bottomRight.y - state.topLeft.y
+                        val currentWidth = state.bottomRight.x - state.topLeft.x
 
-                        var newHeight = (potentialNewBottomY - topLeft.y).coerceAtLeast(
+                        var newHeight = (potentialNewBottomY - state.topLeft.y).coerceAtLeast(
                             cropSizeLimit
                         )
 
-                        var newWidth = newHeight * currentAspectRatio
+                        var newWidth = newHeight * aspectRatio
 
-                        if (topLeft.x + newWidth > maxX) {
+                        if (state.topLeft.x + newWidth > maxX) {
 
-                            newWidth = maxX - topLeft.x
-                            newHeight = newWidth / currentAspectRatio
+                            newWidth = maxX - state.topLeft.x
+                            newHeight = newWidth / aspectRatio
                         }
 
                         if (newWidth < cropSizeLimit) {
 
                             newWidth = cropSizeLimit
-                            newHeight = newWidth / currentAspectRatio
+                            newHeight = newWidth / aspectRatio
                         }
 
-                        val newBottomY = (topLeft.y + newHeight).coerceIn(
-                            topLeft.y + cropSizeLimit..maxY
+                        val newBottomY = (state.topLeft.y + newHeight).coerceIn(
+                            state.topLeft.y + cropSizeLimit..maxY
                         )
 
-                        val finalHeight = newBottomY - topLeft.y
-                        val finalWidth = finalHeight * currentAspectRatio
+                        val finalHeight = newBottomY - state.topLeft.y
+                        val finalWidth = finalHeight * aspectRatio
 
                         if (finalHeight >= cropSizeLimit && finalWidth >= cropSizeLimit
-                            && topLeft.x + finalWidth <= maxX
+                            && state.topLeft.x + finalWidth <= maxX
                         ) {
 
                             val horizontalShift = (currentWidth - finalWidth) / 2
 
-                            bottomLeft = Offset(topLeft.x + horizontalShift, newBottomY)
-                            bottomRight = Offset(bottomRight.x - horizontalShift, newBottomY)
-                            topLeft = topLeft.copy(x = bottomLeft.x)
-                            topRight = topRight.copy(x = bottomRight.x)
+                            state.bottomLeft = Offset(state.topLeft.x + horizontalShift, newBottomY)
+
+                            state.bottomRight = Offset(
+                                x = state.bottomRight.x - horizontalShift,
+                                y = newBottomY
+                            )
+
+                            state.topLeft = state.topLeft.copy(x = state.bottomLeft.x)
+                            state.topRight = state.topRight.copy(x = state.bottomRight.x)
 
                         }
                     }
 
                     KropCorner.LEFT_CENTRE -> {
 
-                        val potentialNewLeftX = topLeft.x + dragAmount.x
-                        val currentWidth = bottomRight.x - topLeft.x
-                        val currentHeight = bottomRight.y - topLeft.y
+                        val potentialNewLeftX = state.topLeft.x + dragAmount.x
+                        val currentWidth = state.bottomRight.x - state.topLeft.x
+                        val currentHeight = state.bottomRight.y - state.topLeft.y
 
-                        var newWidth = (bottomRight.x - potentialNewLeftX).coerceAtLeast(
+                        var newWidth = (state.bottomRight.x - potentialNewLeftX).coerceAtLeast(
                             cropSizeLimit
                         )
 
-                        var newHeight = newWidth / currentAspectRatio
+                        var newHeight = newWidth / aspectRatio
 
-                        if (topLeft.y + newHeight > maxY) {
+                        if (state.topLeft.y + newHeight > maxY) {
 
-                            newHeight = maxY - topLeft.y
-                            newWidth = newHeight * currentAspectRatio
+                            newHeight = maxY - state.topLeft.y
+                            newWidth = newHeight * aspectRatio
                         }
 
                         if (newHeight < cropSizeLimit) {
 
                             newHeight = cropSizeLimit
-                            newWidth = newHeight * currentAspectRatio
+                            newWidth = newHeight * aspectRatio
                         }
 
-                        val newLeftX = (bottomRight.x - newWidth).coerceIn(
-                            minX..bottomRight.x - cropSizeLimit
+                        val newLeftX = (state.bottomRight.x - newWidth).coerceIn(
+                            minX..state.bottomRight.x - cropSizeLimit
                         )
 
-                        val finalWidth = bottomRight.x - newLeftX
-                        val finalHeight = finalWidth / currentAspectRatio
+                        val finalWidth = state.bottomRight.x - newLeftX
+                        val finalHeight = finalWidth / aspectRatio
 
                         if (finalWidth >= cropSizeLimit && finalHeight >= cropSizeLimit
-                            && topLeft.y + finalHeight <= maxY
+                            && state.topLeft.y + finalHeight <= maxY
                         ) {
 
                             val verticalShift = (currentHeight - finalHeight) / 2
 
-                            topLeft = Offset(newLeftX, topLeft.y + verticalShift)
-                            bottomLeft = Offset(newLeftX, bottomRight.y - verticalShift)
-                            topRight = topRight.copy(y = topLeft.y)
-                            bottomRight = bottomRight.copy(y = bottomLeft.y)
+                            state.topLeft = Offset(newLeftX, state.topLeft.y + verticalShift)
+                            state.bottomLeft = Offset(newLeftX, state.bottomRight.y - verticalShift)
+                            state.topRight = state.topRight.copy(y = state.topLeft.y)
+                            state.bottomRight = state.bottomRight.copy(y = state.bottomLeft.y)
                         }
                     }
 
                     KropCorner.RIGHT_CENTRE -> {
 
-                        val potentialNewRightX = bottomRight.x + dragAmount.x
-                        val currentWidth = bottomRight.x - topLeft.x
-                        val currentHeight = bottomRight.y - topLeft.y
+                        val potentialNewRightX = state.bottomRight.x + dragAmount.x
+                        val currentWidth = state.bottomRight.x - state.topLeft.x
+                        val currentHeight = state.bottomRight.y - state.topLeft.y
 
-                        var newWidth = (potentialNewRightX - topLeft.x).coerceAtLeast(cropSizeLimit)
-                        var newHeight = newWidth / currentAspectRatio
+                        var newWidth = (potentialNewRightX - state.topLeft.x).coerceAtLeast(
+                            cropSizeLimit
+                        )
 
-                        if (topLeft.y + newHeight > maxY) {
+                        var newHeight = newWidth / aspectRatio
 
-                            newHeight = maxY - topLeft.y
-                            newWidth = newHeight * currentAspectRatio
+                        if (state.topLeft.y + newHeight > maxY) {
+
+                            newHeight = maxY - state.topLeft.y
+                            newWidth = newHeight * aspectRatio
                         }
 
                         if (newHeight < cropSizeLimit) {
 
                             newHeight = cropSizeLimit
-                            newWidth = newHeight * currentAspectRatio
+                            newWidth = newHeight * aspectRatio
                         }
 
-                        val newRightX = (topLeft.x + newWidth).coerceIn(
-                            topLeft.x + cropSizeLimit..maxX
+                        val newRightX = (state.topLeft.x + newWidth).coerceIn(
+                            state.topLeft.x + cropSizeLimit..maxX
                         )
 
-                        val finalWidth = newRightX - topLeft.x
-                        val finalHeight = finalWidth / currentAspectRatio
+                        val finalWidth = newRightX - state.topLeft.x
+                        val finalHeight = finalWidth / aspectRatio
 
                         if (finalWidth >= cropSizeLimit && finalHeight >= cropSizeLimit
-                            && topLeft.y + finalHeight <= maxY
+                            && state.topLeft.y + finalHeight <= maxY
                         ) {
 
                             val verticalShift = (currentHeight - finalHeight) / 2
 
-                            topRight = Offset(newRightX, topLeft.y + verticalShift)
-                            bottomRight = Offset(newRightX, bottomRight.y - verticalShift)
-                            topLeft = topLeft.copy(y = topRight.y)
-                            bottomLeft = bottomLeft.copy(y = bottomRight.y)
+                            state.topRight = Offset(newRightX, state.topLeft.y + verticalShift)
+
+                            state.bottomRight = Offset(
+                                x = newRightX,
+                                y = state.bottomRight.y - verticalShift
+                            )
+
+                            state.topLeft = state.topLeft.copy(y = state.topRight.y)
+                            state.bottomLeft = state.bottomLeft.copy(y = state.bottomRight.y)
                         }
                     }
 
-                    null -> if (isMovingCropRect) {
+                    null -> if (state.isMovingCropRect) {
 
-                        val rectWidth = bottomRight.x - topLeft.x
-                        val rectHeight = bottomRight.y - topLeft.y
+                        val rectWidth = state.bottomRight.x - state.topLeft.x
+                        val rectHeight = state.bottomRight.y - state.topLeft.y
 
-                        val newTopLeftX = (topLeft.x + dragAmount.x).coerceIn(
+                        val newTopLeftX = (state.topLeft.x + dragAmount.x).coerceIn(
                             minX..maxX - rectWidth
                         )
 
-                        val newTopLeftY = (topLeft.y + dragAmount.y).coerceIn(
+                        val newTopLeftY = (state.topLeft.y + dragAmount.y).coerceIn(
                             minY..maxY - rectHeight
                         )
 
-                        topLeft = Offset(newTopLeftX, newTopLeftY)
-                        topRight = Offset(newTopLeftX + rectWidth, newTopLeftY)
-                        bottomLeft = Offset(newTopLeftX, newTopLeftY + rectHeight)
-                        bottomRight = Offset(newTopLeftX + rectWidth, newTopLeftY + rectHeight)
+                        state.topLeft = Offset(newTopLeftX, newTopLeftY)
+                        state.topRight = Offset(newTopLeftX + rectWidth, newTopLeftY)
+                        state.bottomLeft = Offset(newTopLeftX, newTopLeftY + rectHeight)
+
+                        state.bottomRight = Offset(
+                            x = newTopLeftX + rectWidth,
+                            y = newTopLeftY + rectHeight
+                        )
                     }
                 }
             }
         )
     }
 
-    val pointerInputModifier = when (isAspectLocked) {
-
-        true -> pointerInputWithAspect
-        false -> pointerInputWithoutAspect
+    val pointerInputModifier by remember(state) {
+        derivedStateOf {
+            if (state.isAspectLocked) pointerInputWithAspect else pointerInputWithoutAspect
+        }
     }
 
     val cropCanvasModifier = Modifier.drawWithContent {
@@ -736,94 +735,99 @@ fun ImageKrop(
         drawIntoCanvas {
 
             drawKropOverlay(
-                kropShape = kropShape,
-                topLeft = topLeft,
-                bottomRight = bottomRight,
-                kropConfig = kropConfig
+                kropShape = state.kropShape,
+                topLeft = state.topLeft,
+                bottomRight = state.bottomRight,
+                kropConfig = state.config
             )
 
             drawKropShapeBorder(
-                kropShape = kropShape,
-                topLeft = topLeft,
-                bottomRight = bottomRight,
-                kropConfig = kropConfig
+                kropShape = state.kropShape,
+                topLeft = state.topLeft,
+                bottomRight = state.bottomRight,
+                kropConfig = state.config
             )
 
             drawKropBorder(
-                topLeft = topLeft,
+                topLeft = state.topLeft,
                 rectSize = rectSize,
-                kropConfig = kropConfig
+                kropConfig = state.config
             )
 
             drawPlus(
-                topLeft = topLeft,
+                topLeft = state.topLeft,
                 rectSize = rectSize,
-                kropConfig = kropConfig
+                kropConfig = state.config
             )
 
             drawHandle(
                 corner = KropCorner.TOP_LEFT,
-                center = topLeft,
-                kropConfig = kropConfig
+                center = state.topLeft,
+                kropConfig = state.config
             )
 
             drawHandle(
                 corner = KropCorner.TOP_RIGHT,
-                center = topRight,
-                kropConfig = kropConfig
+                center = state.topRight,
+                kropConfig = state.config
             )
 
             drawHandle(
                 corner = KropCorner.BOTTOM_LEFT,
-                center = bottomLeft,
-                kropConfig = kropConfig
+                center = state.bottomLeft,
+                kropConfig = state.config
             )
 
             drawHandle(
                 corner = KropCorner.BOTTOM_RIGHT,
-                center = bottomRight,
-                kropConfig = kropConfig
+                center = state.bottomRight,
+                kropConfig = state.config
             )
 
             drawHandle(
                 corner = KropCorner.TOP_CENTRE,
                 center = topCenter,
-                kropConfig = kropConfig
+                kropConfig = state.config
             )
 
             drawHandle(
                 corner = KropCorner.BOTTOM_CENTRE,
                 center = bottomCenter,
-                kropConfig = kropConfig
+                kropConfig = state.config
             )
 
             drawHandle(
                 corner = KropCorner.LEFT_CENTRE,
                 center = leftCenter,
-                kropConfig = kropConfig
+                kropConfig = state.config
             )
 
             drawHandle(
                 corner = KropCorner.RIGHT_CENTRE,
                 center = rightCenter,
-                kropConfig = kropConfig
+                kropConfig = state.config
             )
         }
     }
 
-    LaunchedEffect(canvasSize, originalImageBitmap, kropAspectRatio, isAspectLocked) {
+    LaunchedEffect(
+        state.canvasSize,
+        state.imageBitmap,
+        state.kropAspectRatio,
+        state.isAspectLocked
+    ) {
 
-        if (
-            canvasSize != IntSize.Zero && originalImageBitmap.width > 0
-            && originalImageBitmap.height > 0
-        ) {
+        val isCanvasSizeValid = state.canvasSize != IntSize.Zero
+        val isImageSizeValid = state.imageBitmap.width > 0 && state.imageBitmap.height > 0
 
-            val canvasWidth = canvasSize.width.toFloat()
-            val canvasHeight = canvasSize.height.toFloat()
+        if (isCanvasSizeValid && isImageSizeValid) {
+
+            val canvasWidth = state.canvasSize.width.toFloat()
+            val canvasHeight = state.canvasSize.height.toFloat()
 
             var rectW: Float
             var rectH: Float
-            val currentSelectedRatio = kropAspectRatio.ratio
+            val currentSelectedRatio = state.kropAspectRatio.ratio
 
             if (currentSelectedRatio != null) {
 
@@ -845,7 +849,7 @@ fun ImageKrop(
             rectW = rectW.coerceAtLeast(cropSizeLimit)
             rectH = rectH.coerceAtLeast(cropSizeLimit)
 
-            if (isAspectLocked && currentSelectedRatio != null) {
+            if (state.isAspectLocked && currentSelectedRatio != null) {
 
                 val checkH = rectW / currentSelectedRatio
 
@@ -902,7 +906,7 @@ fun ImageKrop(
             rectW = rectW.coerceAtLeast(cropSizeLimit)
             rectH = rectH.coerceAtLeast(cropSizeLimit)
 
-            if (isAspectLocked && currentSelectedRatio != null) {
+            if (state.isAspectLocked && currentSelectedRatio != null) {
 
                 if (abs(rectW / rectH - currentSelectedRatio) > 0.01f) {
 
@@ -919,102 +923,33 @@ fun ImageKrop(
             val initialTopLeftX = (canvasWidth - rectW) / 2
             val initialTopLeftY = (canvasHeight - rectH) / 2
 
-            topLeft = Offset(initialTopLeftX, initialTopLeftY)
-            topRight = Offset(initialTopLeftX + rectW, initialTopLeftY)
-            bottomLeft = Offset(initialTopLeftX, initialTopLeftY + rectH)
-            bottomRight = Offset(initialTopLeftX + rectW, initialTopLeftY + rectH)
+            state.topLeft = Offset(initialTopLeftX, initialTopLeftY)
+            state.topRight = Offset(initialTopLeftX + rectW, initialTopLeftY)
+            state.bottomLeft = Offset(initialTopLeftX, initialTopLeftY + rectH)
+            state.bottomRight = Offset(initialTopLeftX + rectW, initialTopLeftY + rectH)
         }
     }
 
-    Scaffold(
+    KropImagePreview(
+        sheetState = imagePreviewSheetState,
+        state = state
+    )
+
+    Column(
         modifier = modifier,
-        topBar = {
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
 
-            ImageKropTopBar(
-                modifier = Modifier.fillMaxWidth(),
-                onRefreshing = { isVisible ->
-
-                    isRefreshing = isVisible
-                },
-                originalImageBitmap = originalImageBitmap,
-                modifiedImageBitmap = modifiedImageBitmap,
-                onModifiedImage = { result ->
-
-                    modifiedImageBitmap = result
-                },
-                onImageKropDone = onImageKropDone,
-                canvasSize = canvasSize,
-                topLeft = topLeft,
-                bottomRight = bottomRight,
-                onUndoImageBitmap = {
-
-                    isRefreshing = true
-                    modifiedImageBitmap = originalImageBitmap
-                    isRefreshing = false
-                },
-                imagePreviewSheetState = imagePreviewSheetState,
-                snackbarCoroutineScope = snackbarCoroutineScope,
-                snackbarHostState = snackbarHostState,
-                kropShape = kropShape,
-                onNavigateBack = onNavigateBack
-            )
-        },
-        bottomBar = {
-
-            ImageKropBottomBar(
-                modifier = Modifier.fillMaxWidth(),
-                kropAspectRatio = kropAspectRatio,
-                onKropAspectRatio = { aspect ->
-
-                    kropAspectRatio = aspect
-                },
-                kropShapeList = kropShapeList,
-                kropShape = kropShape,
-                onKropShape = { shape ->
-
-                    kropShape = shape
-                },
-                onRefreshing = { isVisible ->
-
-                    isRefreshing = isVisible
-                },
-                originalImageBitmap = originalImageBitmap,
-                onModifiedImage = { result ->
-
-                    modifiedImageBitmap = result
-                },
-                onImageKropDone = onImageKropDone,
-                canvasSize = canvasSize,
-                topLeft = topLeft,
-                bottomRight = bottomRight,
-                onUndoImageBitmap = {
-
-                    isRefreshing = true
-                    modifiedImageBitmap = originalImageBitmap
-                    isRefreshing = false
-                },
-                snackbarCoroutineScope = snackbarCoroutineScope,
-                snackbarHostState = snackbarHostState,
-                isAspectLocked = isAspectLocked,
-                onAspectLocked = { isLocked ->
-
-                    isAspectLocked = isLocked
-                }
-            )
-        },
-        snackbarHost = { snackbarHostState }
-    ) { paddingValues ->
-
-        KropImagePreview(
-            sheetState = imagePreviewSheetState,
-            originalImageBitmap = originalImageBitmap,
-            modifiedImageBitmap = modifiedImageBitmap
+        ImageKropTopBar(
+            modifier = Modifier.fillMaxWidth(),
+            state = state,
+            imagePreviewSheetState = imagePreviewSheetState,
+            onNavigateBack = onNavigateBack
         )
 
         BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues = paddingValues),
+            modifier = Modifier.weight(weight = 1.0F),
             contentAlignment = Alignment.Center
         ) {
 
@@ -1025,20 +960,23 @@ fun ImageKrop(
                         val imageWidth = layoutCoordinates.size.width.toFloat()
                         val imageHeight = layoutCoordinates.size.height.toFloat()
 
-                        topLeft = Offset(imageWidth * 0.05F, imageHeight * 0.05F)
-                        topRight = Offset(imageWidth * 0.95F, imageHeight * 0.05F)
-                        bottomLeft = Offset(imageWidth * 0.05F, imageHeight * 0.95F)
-                        bottomRight = Offset(imageWidth * 0.95F, imageHeight * 0.95F)
-                        canvasSize = layoutCoordinates.size
+                        state.topLeft = Offset(imageWidth * 0.05F, imageHeight * 0.05F)
+                        state.topRight = Offset(imageWidth * 0.95F, imageHeight * 0.05F)
+                        state.bottomLeft = Offset(imageWidth * 0.05F, imageHeight * 0.95F)
+                        state.bottomRight = Offset(imageWidth * 0.95F, imageHeight * 0.95F)
+                        state.canvasSize = layoutCoordinates.size
                     }
                     .then(pointerInputModifier)
                     .then(cropCanvasModifier),
-                bitmap = modifiedImageBitmap,
+                bitmap = state.imageBitmap,
                 contentScale = ContentScale.Fit,
                 contentDescription = "Image View"
             )
-
-            if (isRefreshing) CircularProgressIndicator()
         }
+
+        ImageKropBottomBar(
+            modifier = Modifier.fillMaxWidth(),
+            state = state
+        )
     }
 }

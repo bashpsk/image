@@ -31,11 +31,12 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
 import io.bashpsk.imagekrop.crop.ImageKrop
 import io.bashpsk.imagekrop.crop.KropConfig
-import io.bashpsk.imagekrop.crop.KropResult
 import io.bashpsk.imagekrop.crop.KropShape
+import io.bashpsk.imagekrop.crop.rememberImageKropState
 import io.bashpsk.imagekrop.view.TransformImageView
 import io.bashpsk.imagekrop.view.rememberImageTransformState
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
@@ -45,12 +46,9 @@ fun ImageCropDemoScreen() {
     val coroutineScope = rememberCoroutineScope()
     val imageTransformState = rememberImageTransformState()
 
-    val imageBitmap = ImageBitmap.imageResource(R.drawable.wallpaper02)
+    val imageBitmap = ImageBitmap.imageResource(R.drawable.wallpaper01)
 
     var isImageEdit by remember { mutableStateOf(value = false) }
-    var kropResult by remember { mutableStateOf<KropResult>(value = KropResult.Init) }
-
-    var selectedImage by remember { mutableStateOf(imageBitmap) }
 
     val handleColor = MaterialTheme.colorScheme.onSurface
     val targetColor = MaterialTheme.colorScheme.surfaceTint
@@ -87,6 +85,12 @@ fun ImageCropDemoScreen() {
         )
     }
 
+    val imageKropState = rememberImageKropState(
+        imageBitmap = imageBitmap,
+        config = kropConfig,
+        shapeList = kropShapeList
+    )
+
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
@@ -101,19 +105,7 @@ fun ImageCropDemoScreen() {
                 modifier = Modifier
                     .fillMaxSize()
                     .safeDrawingPadding(),
-                imageBitmap = when (kropResult) {
-
-                    is KropResult.Init -> imageBitmap
-                    is KropResult.Failed -> null
-                    is KropResult.Success -> (kropResult as KropResult.Success).cropped
-                },
-                kropConfig = kropConfig,
-                kropShapeList = kropShapeList,
-                onImageKropDone = { result ->
-
-                    kropResult = result
-                    (result as? KropResult.Success)?.cropped?.let { selectedImage = it }
-                },
+                state = imageKropState,
                 onNavigateBack = {
 
                     isImageEdit = false
@@ -135,9 +127,39 @@ fun ImageCropDemoScreen() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                TransformImageView(
+                imageKropState.modifiedImage?.let { bitmap ->
+
+                    TransformImageView(
+                        modifier = Modifier.weight(weight = 1.0F),
+                        imageModel = { bitmap.asAndroidBitmap() },
+                        state = imageTransformState
+                    )
+
+                    Button(
+                        onClick = {
+
+                            coroutineScope.launch(Dispatchers.IO) {
+
+                                bitmap.saveAsFile(name = "PSK-Cropped").let { file ->
+
+                                    launch(Dispatchers.Main) {
+
+                                        Toast.makeText(
+                                            context,
+                                            if (file?.exists() == true) "Image Saved" else "Failed",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                            }
+                        }
+                    ) {
+
+                        Text("Save Image")
+                    }
+                } ?: TransformImageView(
                     modifier = Modifier.weight(weight = 1.0F),
-                    imageModel = { selectedImage.asAndroidBitmap() },
+                    imageModel = { imageBitmap.asAndroidBitmap() },
                     state = imageTransformState
                 )
 
@@ -149,29 +171,6 @@ fun ImageCropDemoScreen() {
                 ) {
 
                     Text("Edit Image")
-                }
-
-                Button(
-                    enabled = kropResult is KropResult.Success,
-                    onClick = {
-
-                        coroutineScope.launch {
-
-                            (kropResult as KropResult.Success).cropped.saveAsFile(
-                                name = "PSK-Cropped"
-                            ).let { file ->
-
-                                Toast.makeText(
-                                    context,
-                                    if (file?.exists() == true) "Image Saved" else "Failed",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
-                ) {
-
-                    Text("Save Image")
                 }
             }
         }

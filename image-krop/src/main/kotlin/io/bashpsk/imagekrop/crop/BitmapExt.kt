@@ -16,6 +16,9 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntSize
 import io.bashpsk.imagekrop.utils.LOG_TAG
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
@@ -81,45 +84,45 @@ private const val MIN_CROP_DIMENSION_PX = 1
  *   - [KropResult.Failed] containing an error message and the original [ImageBitmap] if any error
  *   occurs during the process (e.g., invalid dimensions, out of memory).
  */
-fun ImageBitmap.getCroppedImageBitmap(
+suspend fun ImageBitmap.getCroppedImageBitmap(
     cropRect: Rect,
     canvasSize: IntSize,
     imageFlip: KropImageFlip? = null,
     kropShape: KropShape = KropShape.SharpeCorner
-): KropResult {
+): KropResult = withContext(context = Dispatchers.IO) {
 
     val sourceImageBitmap = this@getCroppedImageBitmap
 
     if (canvasSize.width <= 0 || canvasSize.height <= 0) {
 
-        val message = "Canvas size must be positive: ${canvasSize.width}x${canvasSize.height}"
+        val message = "Canvas size must be positive : ${canvasSize.width}x${canvasSize.height}"
 
         Log.e(LOG_TAG, message)
-        return KropResult.Failed(message = message, original = sourceImageBitmap)
+        return@withContext KropResult.Failed(message = message)
     }
 
     if (sourceImageBitmap.width <= 0 || sourceImageBitmap.height <= 0) {
 
-        val message = "Source image bitmap size must be positive: ${
+        val message = "Source image bitmap size must be positive : ${
             sourceImageBitmap.width
         }x${
             sourceImageBitmap.height
         }"
 
         Log.e(LOG_TAG, message)
-        return KropResult.Failed(message = message, original = sourceImageBitmap)
+        return@withContext KropResult.Failed(message = message)
     }
 
     if (cropRect.width < 0 || cropRect.height < 0) {
 
-        val message = "Crop rectangle dimensions cannot be negative: ${
+        val message = "Crop rectangle dimensions cannot be negative : ${
             cropRect.width
         }x${
             cropRect.height
         }"
 
         Log.e(LOG_TAG, message)
-        return KropResult.Failed(message = message, original = sourceImageBitmap)
+        return@withContext KropResult.Failed(message = message)
     }
 
     val canvasWidth = canvasSize.width.toFloat()
@@ -175,7 +178,7 @@ fun ImageBitmap.getCroppedImageBitmap(
 
     if (cropWidth <= MIN_CROP_DIMENSION_PX && cropHeight <= MIN_CROP_DIMENSION_PX) {
 
-        val message = "Calculated crop dimensions too small: ${
+        val message = "Calculated crop dimensions too small : ${
             cropWidth
         }x${cropHeight}. Minimum is $MIN_CROP_DIMENSION_PX."
 
@@ -221,25 +224,26 @@ fun ImageBitmap.getCroppedImageBitmap(
 
         val shapedBitmap = bitmapShapeMask(imageBitmap = croppedBitmap, kropShape = kropShape)
 
-        return KropResult.Success(cropped = shapedBitmap, original = sourceImageBitmap)
+        return@withContext KropResult.Success(bitmap = shapedBitmap)
     } catch (exception: IllegalArgumentException) {
 
         val message = "Image Crop Failed: Invalid dimensions for bitmap. ${exception.message}"
 
         Log.e(LOG_TAG, message, exception)
-        return KropResult.Failed(message = message, original = sourceImageBitmap)
+        return@withContext KropResult.Failed(message = message)
     } catch (exception: OutOfMemoryError) {
 
         val message = "Image Crop Failed: Out of memory. ${exception.message}"
 
         Log.e(LOG_TAG, message, exception)
-        return KropResult.Failed(message = message, original = sourceImageBitmap)
+        return@withContext KropResult.Failed(message = message)
     } catch (exception: Exception) {
 
         val message = "Image Crop Failed: An unexpected error occurred. ${exception.message}"
 
+        ensureActive()
         Log.e(LOG_TAG, message, exception)
-        return KropResult.Failed(message = message, original = sourceImageBitmap)
+        return@withContext KropResult.Failed(message = message)
     }
 }
 

@@ -10,7 +10,7 @@ package io.bashpsk.imagekrop.crop
  * @property ratio The calculated float value of the aspect ratio (width / height). This can be null
  * if not explicitly defined.
  */
-internal enum class KropAspectRatio(
+enum class KropAspectRatio(
     val width: Int = 1,
     val height: Int = 1,
     val ratio: Float? = null

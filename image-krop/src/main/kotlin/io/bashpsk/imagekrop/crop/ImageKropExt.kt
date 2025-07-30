@@ -290,11 +290,11 @@ internal fun DrawScope.drawKropShapePreview(kropShape: KropShape, shapeColor: Co
  * after a corner drag, maintaining a given aspect ratio.
  *
  * @param draggedCornerCurrent The current position of the corner being dragged.
- * @param anchorCorner The position of the corner opposite to the dragged corner (this corner stays
- * fixed).
+ * @param anchorCorner The position of the corner opposite to the dragged corner
+ * (this corner stays fixed).
  * @param dragDelta The amount by which the draggedCornerCurrent has been moved.
- * @param cornerType The specific corner being dragged (TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT,
- * BOTTOM_RIGHT).
+ * @param cornerType The specific corner being dragged
+ * (TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT).
  * @param aspectRatio The desired aspect ratio (width / height).
  * @param minSize The minimum allowed size (width or height) for the rectangle.
  * @param canvasWidth The maximum width of the canvas.
@@ -451,8 +451,14 @@ internal fun calculateNewCropRect(
 
     val clampedTopLeftX = resultTopLeft.x.coerceIn(0f, canvasWidth - minSize)
     val clampedTopLeftY = resultTopLeft.y.coerceIn(0f, canvasHeight - minSize)
-    val clampedBottomRightX = resultBottomRight.x.coerceIn(clampedTopLeftX + minSize, canvasWidth)
-    val clampedBottomRightY = resultBottomRight.y.coerceIn(clampedTopLeftY + minSize, canvasHeight)
+
+    val clampedBottomRightX = resultBottomRight.x.coerceIn(
+        clampedTopLeftX + minSize.. canvasWidth
+    )
+
+    val clampedBottomRightY = resultBottomRight.y.coerceIn(
+        clampedTopLeftY + minSize.. canvasHeight
+    )
 
     if (clampedBottomRightX - clampedTopLeftX < minSize
         || clampedBottomRightY - clampedTopLeftY < minSize

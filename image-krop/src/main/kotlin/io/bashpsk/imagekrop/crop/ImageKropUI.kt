@@ -24,31 +24,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 
 /**
@@ -57,46 +47,23 @@ import kotlinx.coroutines.launch
  * the crop.
  *
  * @param modifier Modifier to be applied to the TopAppBar.
- * @param onRefreshing Lambda function to indicate if a refresh operation is in progress.
- * @param originalImageBitmap The original image bitmap before any modifications.
- * @param modifiedImageBitmap The currently modified image bitmap.
- * @param onModifiedImage Lambda function to be called when the image is modified.
- * @param onImageKropDone Lambda function to be called when the image cropping is finalized.
- * @param canvasSize The size of the canvas where the image is displayed and cropped.
- * @param topLeft The top-left offset of the cropping rectangle.
- * @param bottomRight The bottom-right offset of the cropping rectangle.
- * @param onUndoImageBitmap Lambda function to undo the last image modification.
+ * @param state The current state of the image cropping UI, containing information like the original
+ * and modified images, crop parameters, etc.
  * @param imagePreviewSheetState State for the bottom sheet used to preview the image.
- * @param snackbarCoroutineScope Coroutine scope for showing snackbars.
- * @param snackbarHostState State for managing snackbars.
- * @param kropShape The current shape used for cropping.
  * @param onNavigateBack Lambda function to handle navigation back.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ImageKropTopBar(
     modifier: Modifier = Modifier,
-    onRefreshing: (isVisible: Boolean) -> Unit,
-    originalImageBitmap: ImageBitmap?,
-    modifiedImageBitmap: ImageBitmap,
-    onModifiedImage: (image: ImageBitmap) -> Unit,
-    onImageKropDone: (result: KropResult) -> Unit,
-    canvasSize: IntSize,
-    topLeft: Offset,
-    bottomRight: Offset,
-    onUndoImageBitmap: () -> Unit,
+    state: ImageKropState,
     imagePreviewSheetState: SheetState,
-    snackbarCoroutineScope: CoroutineScope,
-    snackbarHostState: SnackbarHostState,
-    kropShape: KropShape,
     onNavigateBack: () -> Unit
 ) {
 
     val imagePreviewCoroutineScope = rememberCoroutineScope()
 
-    val isUndoImageBitmap by remember(originalImageBitmap, modifiedImageBitmap) {
-        derivedStateOf { originalImageBitmap?.sameAs(modifiedImageBitmap)?.not() ?: false }
-    }
+    val isUndoImageBitmap by remember(state) { derivedStateOf { state.imageList.isNotEmpty() } }
 
     TopAppBar(
         modifier = modifier,
@@ -114,8 +81,15 @@ internal fun ImageKropTopBar(
         actions = {
 
             IconButton(
-//                enabled = isUndoImageBitmap,
-                onClick = onUndoImageBitmap
+                enabled = isUndoImageBitmap,
+                onClick = {
+
+                    state.imageList.lastOrNull()?.let { bitmap ->
+
+                        state.updateModifiedImage(bitmap = bitmap)
+                        state.removeLastImage()
+                    }
+                }
             ) {
 
                 Icon(
@@ -127,48 +101,30 @@ internal fun ImageKropTopBar(
             IconButton(
                 onClick = {
 
-                    onRefreshing(true)
+                    imagePreviewCoroutineScope.launch {
 
-                    val kropResult = originalImageBitmap?.getCroppedImageBitmap(
-                        cropRect = Rect(topLeft = topLeft, bottomRight = bottomRight),
-                        canvasSize = canvasSize,
-                        kropShape = kropShape
-                    ) ?: KropResult.Failed(message = "Image is Null.", original = null)
+                        val kropResult = state.originalImage.getCroppedImageBitmap(
+                            cropRect = Rect(
+                                topLeft = state.topLeft,
+                                bottomRight = state.bottomRight
+                            ),
+                            canvasSize = state.canvasSize,
+                            kropShape = state.kropShape
+                        )
 
-                    when (kropResult) {
+                        when (kropResult) {
 
-                        is KropResult.Init -> {
+                            is KropResult.Init -> {}
 
-                            snackbarCoroutineScope.coroutineContext.cancelChildren()
+                            is KropResult.Failed -> {}
 
-                            snackbarCoroutineScope.launch {
+                            is KropResult.Success -> {
 
-                                val message = "Cropped Image Not Found!"
-
-                                snackbarHostState.showSnackbar(message = message)
+                                state.updateModifiedImage(bitmap = kropResult.bitmap)
+                                imagePreviewSheetState.expand()
                             }
-                        }
-
-                        is KropResult.Failed -> {
-
-                            snackbarCoroutineScope.coroutineContext.cancelChildren()
-
-                            snackbarCoroutineScope.launch {
-
-                                val message = "Image Crop Failed!"
-
-                                snackbarHostState.showSnackbar(message = message)
-                            }
-                        }
-
-                        is KropResult.Success -> imagePreviewCoroutineScope.launch {
-
-                            onModifiedImage(kropResult.cropped)
-                            imagePreviewSheetState.expand()
                         }
                     }
-
-                    onRefreshing(false)
                 }
             ) {
 
@@ -181,49 +137,30 @@ internal fun ImageKropTopBar(
             IconButton(
                 onClick = {
 
-                    onRefreshing(true)
+                    imagePreviewCoroutineScope.launch {
 
-                    val kropResult = originalImageBitmap?.getCroppedImageBitmap(
-                        cropRect = Rect(topLeft = topLeft, bottomRight = bottomRight),
-                        canvasSize = canvasSize,
-                        kropShape = kropShape
-                    ) ?: KropResult.Failed(message = "Image is Null.", original = null)
+                        val kropResult = state.originalImage.getCroppedImageBitmap(
+                            cropRect = Rect(
+                                topLeft = state.topLeft,
+                                bottomRight = state.bottomRight
+                            ),
+                            canvasSize = state.canvasSize,
+                            kropShape = state.kropShape
+                        )
 
-                    when (kropResult) {
+                        when (kropResult) {
 
-                        is KropResult.Init -> {
+                            is KropResult.Init -> {}
 
-                            snackbarCoroutineScope.coroutineContext.cancelChildren()
+                            is KropResult.Failed -> {}
 
-                            snackbarCoroutineScope.launch {
+                            is KropResult.Success -> {
 
-                                val message = "Cropped Image Not Found!"
-
-                                snackbarHostState.showSnackbar(message = message)
+                                state.updateModifiedImage(bitmap = kropResult.bitmap)
+                                onNavigateBack()
                             }
-                        }
-
-                        is KropResult.Failed -> {
-
-                            snackbarCoroutineScope.coroutineContext.cancelChildren()
-
-                            snackbarCoroutineScope.launch {
-
-                                val message = "Image Crop Failed!"
-
-                                snackbarHostState.showSnackbar(message = message)
-                            }
-                        }
-
-                        is KropResult.Success -> {
-
-                            onNavigateBack()
-                            onModifiedImage(kropResult.cropped)
-                            onImageKropDone(kropResult)
                         }
                     }
-
-                    onRefreshing(false)
                 }
             ) {
 
@@ -242,55 +179,20 @@ internal fun ImageKropTopBar(
  * shape.
  *
  * @param modifier The modifier to be applied to the bottom bar.
- * @param kropAspectRatio The current aspect ratio for cropping.
- * @param onKropAspectRatio Callback function invoked when the aspect ratio is changed.
- * @param kropShapeList An optional immutable list of available crop shapes. If null, default shapes
- * are used.
- * @param kropShape The current crop shape.
- * @param onKropShape Callback function invoked when the crop shape is changed.
- * @param onRefreshing Callback function to indicate whether a refresh operation is in progress.
- * @param originalImageBitmap The original image bitmap before any modifications.
- * @param onModifiedImage Callback function invoked when the image is modified (e.g., flipped).
- * @param onImageKropDone Callback function invoked when the cropping operation is completed
- * successfully or fails.
- * @param canvasSize The size of the canvas where the image is displayed and cropped.
- * @param topLeft The top-left offset of the crop selection area.
- * @param bottomRight The bottom-right offset of the crop selection area.
- * @param onUndoImageBitmap Callback function to undo the last image modification (not directly used
- * in this bottom bar but passed for consistency).
- * @param snackbarCoroutineScope The coroutine scope for showing snackbars.
- * @param snackbarHostState The state for managing snackbars.
- * @param isAspectLocked A boolean indicating whether the aspect ratio is locked.
- * @param onAspectLocked Callback function invoked when the aspect ratio lock state is changed.
+ * @param state The current state of the image cropping UI, containing all necessary information
+ * and callbacks for operations.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ImageKropBottomBar(
     modifier: Modifier = Modifier,
-    kropAspectRatio: KropAspectRatio,
-    onKropAspectRatio: (aspect: KropAspectRatio) -> Unit,
-    kropShapeList: ImmutableList<KropShape>? = null,
-    kropShape: KropShape,
-    onKropShape: (shape: KropShape) -> Unit,
-    onRefreshing: (isVisible: Boolean) -> Unit,
-    originalImageBitmap: ImageBitmap?,
-    onModifiedImage: (image: ImageBitmap) -> Unit,
-    onImageKropDone: (result: KropResult) -> Unit,
-    canvasSize: IntSize,
-    topLeft: Offset,
-    bottomRight: Offset,
-    onUndoImageBitmap: () -> Unit,
-    snackbarCoroutineScope: CoroutineScope,
-    snackbarHostState: SnackbarHostState,
-    isAspectLocked: Boolean,
-    onAspectLocked: (isLocked: Boolean) -> Unit
+    state: ImageKropState
 ) {
 
-    var isAspectRatioMenuExpanded by remember { mutableStateOf(false) }
-    var isShapeMenuExpanded by remember { mutableStateOf(false) }
+    val imagePreviewCoroutineScope = rememberCoroutineScope()
 
-    val aspectLockIcon by remember(isAspectLocked) {
-        derivedStateOf { if (isAspectLocked) Icons.Filled.Lock else Icons.Filled.LockOpen }
+    val aspectLockIcon by remember(state) {
+        derivedStateOf { if (state.isAspectLocked) Icons.Filled.Lock else Icons.Filled.LockOpen }
     }
 
     BottomAppBar(modifier = modifier) {
@@ -306,49 +208,30 @@ internal fun ImageKropBottomBar(
             IconButton(
                 onClick = {
 
-                    onRefreshing(true)
+                    imagePreviewCoroutineScope.launch {
 
-                    val kropResult = originalImageBitmap?.getCroppedImageBitmap(
-                        cropRect = Rect(topLeft = topLeft, bottomRight = bottomRight),
-                        canvasSize = canvasSize,
-                        imageFlip = KropImageFlip.Horizontal,
-                        kropShape = kropShape
-                    ) ?: KropResult.Failed(message = "Image is Null.", original = null)
+                        val kropResult = state.originalImage.getCroppedImageBitmap(
+                            cropRect = Rect(
+                                topLeft = state.topLeft,
+                                bottomRight = state.bottomRight
+                            ),
+                            canvasSize = state.canvasSize,
+                            imageFlip = KropImageFlip.Horizontal,
+                            kropShape = state.kropShape
+                        )
 
-                    when (kropResult) {
+                        when (kropResult) {
 
-                        is KropResult.Init -> {
+                            is KropResult.Init -> {}
 
-                            snackbarCoroutineScope.coroutineContext.cancelChildren()
+                            is KropResult.Failed -> {}
 
-                            snackbarCoroutineScope.launch {
+                            is KropResult.Success -> {
 
-                                val message = "Flip Image Not Found!"
-
-                                snackbarHostState.showSnackbar(message = message)
+                                state.updateModifiedImage(bitmap = kropResult.bitmap)
                             }
-                        }
-
-                        is KropResult.Failed -> {
-
-                            snackbarCoroutineScope.coroutineContext.cancelChildren()
-
-                            snackbarCoroutineScope.launch {
-
-                                val message = "Image Flip Failed!"
-
-                                snackbarHostState.showSnackbar(message = message)
-                            }
-                        }
-
-                        is KropResult.Success -> {
-
-                            onModifiedImage(kropResult.cropped)
-                            onImageKropDone(kropResult)
                         }
                     }
-
-                    onRefreshing(false)
                 }
             ) {
 
@@ -361,49 +244,30 @@ internal fun ImageKropBottomBar(
             IconButton(
                 onClick = {
 
-                    onRefreshing(true)
+                    imagePreviewCoroutineScope.launch {
 
-                    val kropResult = originalImageBitmap?.getCroppedImageBitmap(
-                        cropRect = Rect(topLeft = topLeft, bottomRight = bottomRight),
-                        canvasSize = canvasSize,
-                        imageFlip = KropImageFlip.Vertical,
-                        kropShape = kropShape
-                    ) ?: KropResult.Failed(message = "Image is Null.", original = null)
+                        val kropResult = state.originalImage.getCroppedImageBitmap(
+                            cropRect = Rect(
+                                topLeft = state.topLeft,
+                                bottomRight = state.bottomRight
+                            ),
+                            canvasSize = state.canvasSize,
+                            imageFlip = KropImageFlip.Vertical,
+                            kropShape = state.kropShape
+                        )
 
-                    when (kropResult) {
+                        when (kropResult) {
 
-                        is KropResult.Init -> {
+                            is KropResult.Init -> {}
 
-                            snackbarCoroutineScope.coroutineContext.cancelChildren()
+                            is KropResult.Failed -> {}
 
-                            snackbarCoroutineScope.launch {
+                            is KropResult.Success -> {
 
-                                val message = "Flip Image Not Found!"
-
-                                snackbarHostState.showSnackbar(message = message)
+                                state.updateModifiedImage(bitmap = kropResult.bitmap)
                             }
-                        }
-
-                        is KropResult.Failed -> {
-
-                            snackbarCoroutineScope.coroutineContext.cancelChildren()
-
-                            snackbarCoroutineScope.launch {
-
-                                val message = "Image Flip Failed!"
-
-                                snackbarHostState.showSnackbar(message = message)
-                            }
-                        }
-
-                        is KropResult.Success -> {
-
-                            onModifiedImage(kropResult.cropped)
-                            onImageKropDone(kropResult)
                         }
                     }
-
-                    onRefreshing(false)
                 }
             ) {
 
@@ -417,7 +281,7 @@ internal fun ImageKropBottomBar(
             IconButton(
                 onClick = {
 
-                    isAspectRatioMenuExpanded = true
+                    state.isAspectRatioMenuExpanded = true
                 }
             ) {
 
@@ -427,10 +291,10 @@ internal fun ImageKropBottomBar(
                 )
 
                 DropdownMenu(
-                    expanded = isAspectRatioMenuExpanded,
+                    expanded = state.isAspectRatioMenuExpanded,
                     onDismissRequest = {
 
-                        isAspectRatioMenuExpanded = false
+                        state.isAspectRatioMenuExpanded = false
                     }
                 ) {
 
@@ -451,14 +315,14 @@ internal fun ImageKropBottomBar(
                         },
                         onClick = {
 
-                            onAspectLocked(isAspectLocked.not())
+                            state.updateAspectLocked(locked = state.isAspectLocked.not())
                         }
                     )
 
                     KropAspectRatio.entries.forEach { aspectRatio ->
 
-                        val isSelected by remember(kropAspectRatio, aspectRatio) {
-                            derivedStateOf { kropAspectRatio == aspectRatio }
+                        val isSelected by remember(state, aspectRatio) {
+                            derivedStateOf { state.kropAspectRatio == aspectRatio }
                         }
 
                         DropdownMenuItem(
@@ -477,8 +341,8 @@ internal fun ImageKropBottomBar(
                             },
                             onClick = {
 
-                                onKropAspectRatio(aspectRatio)
-                                isAspectRatioMenuExpanded = false
+                                state.updateAspectRatio(aspectRatio)
+                                state.isAspectRatioMenuExpanded = false
                             }
                         )
                     }
@@ -488,7 +352,7 @@ internal fun ImageKropBottomBar(
             IconButton(
                 onClick = {
 
-                    isShapeMenuExpanded = true
+                    state.isShapeMenuExpanded = true
                 }
             ) {
 
@@ -498,17 +362,17 @@ internal fun ImageKropBottomBar(
                 )
 
                 DropdownMenu(
-                    expanded = isShapeMenuExpanded,
+                    expanded = state.isShapeMenuExpanded,
                     onDismissRequest = {
 
-                        isShapeMenuExpanded = false
+                        state.isShapeMenuExpanded = false
                     }
                 ) {
 
-                    (kropShapeList ?: KropShape.entries.toImmutableList()).forEach { shape ->
+                    state.shapeList.forEach { shape ->
 
-                        val isSelected by remember(kropShape, shape) {
-                            derivedStateOf { kropShape == shape }
+                        val isSelected by remember(state, shape) {
+                            derivedStateOf { state.kropShape == shape }
                         }
 
                         DropdownMenuItem(
@@ -519,8 +383,8 @@ internal fun ImageKropBottomBar(
                             },
                             onClick = {
 
-                                onKropShape(shape)
-                                isShapeMenuExpanded = false
+                                state.updateKropShape(shape)
+                                state.isShapeMenuExpanded = false
                             }
                         )
                     }
