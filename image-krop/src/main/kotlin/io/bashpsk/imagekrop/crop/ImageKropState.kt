@@ -9,22 +9,22 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 
 @Composable
 fun rememberImageKropState(
     imageBitmap: ImageBitmap,
-    config: KropConfig = KropConfig(),
-    shapeList: ImmutableList<KropShape> = KropShape.entries.toImmutableList()
+    config: KropConfig = KropConfig.surfaceBased(),
+    shapeList: ImmutableList<KropShape> = KropShape.Basic,
+    aspectList: ImmutableList<KropAspectRatio> = KropAspectRatio.Basic
 ): ImageKropState {
 
-    return remember(imageBitmap, config) {
+    return remember(imageBitmap, config, shapeList, aspectList) {
         ImageKropState(
             imageBitmap = imageBitmap,
             config = config,
             shapeList = shapeList,
+            aspectList = aspectList
         )
     }
 }
@@ -32,7 +32,8 @@ fun rememberImageKropState(
 class ImageKropState(
     val imageBitmap: ImageBitmap,
     val config: KropConfig,
-    val shapeList: ImmutableList<KropShape>
+    val shapeList: ImmutableList<KropShape>,
+    val aspectList: ImmutableList<KropAspectRatio>
 ) {
 
     var originalImage by mutableStateOf(imageBitmap)
@@ -41,10 +42,13 @@ class ImageKropState(
     var modifiedImage by mutableStateOf<ImageBitmap?>(null)
         private set
 
-    var imageList by mutableStateOf<PersistentList<ImageBitmap>>(persistentListOf())
+    var previewImage by mutableStateOf<ImageBitmap?>(null)
         private set
 
-    var kropAspectRatio by mutableStateOf(KropAspectRatio.Square)
+    var imageList by mutableStateOf(persistentListOf(imageBitmap))
+        private set
+
+    var kropAspectRatio by mutableStateOf(KropAspectRatio.Ratio1to1)
         private set
 
     var isAspectLocked by mutableStateOf(false)
@@ -74,22 +78,37 @@ class ImageKropState(
         addImage(bitmap = bitmap)
     }
 
+    fun updatePreviewImage(bitmap: ImageBitmap) {
+
+        previewImage = bitmap
+    }
+
     fun addImage(bitmap: ImageBitmap) {
 
-        imageList = imageList.add(element = bitmap)
+        val safeImageList = existImageIndex(bitmap = bitmap)?.let { index ->
+
+            imageList.removeAt(index)
+        } ?: imageList
+
+        imageList = safeImageList.add(element = bitmap)
     }
 
     fun removeLastImage() {
 
-        imageList.lastIndex.takeIf { index -> index >= 0 }?.let { index ->
+        imageList.lastIndex.takeIf { index -> index > 0 }?.let { index ->
 
             imageList = imageList.removeAt(index = index)
+        }
+
+        imageList.lastOrNull()?.let { bitmap ->
+
+            updateOriginalImage(bitmap = bitmap)
         }
     }
 
     fun clearImages() {
 
-        imageList = persistentListOf()
+        imageList = persistentListOf(imageBitmap)
     }
 
     fun updateAspectRatio(aspect: KropAspectRatio) {
@@ -105,5 +124,13 @@ class ImageKropState(
     fun updateKropShape(shape: KropShape) {
 
         kropShape = shape
+    }
+
+    internal fun existImageIndex(bitmap: ImageBitmap): Int? {
+
+        return imageList.indexOfFirst { bitmapItem ->
+
+            bitmapItem.sameAs(bitmap)
+        }.takeIf { index -> index > 0 }
     }
 }

@@ -1,5 +1,7 @@
 package io.bashpsk.imagekrop.crop
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
@@ -39,4 +41,25 @@ data class KropConfig(
     val overlayColor: Color = Color.Black.copy(alpha = 0.5F),
     val shapeBorder: Dp = 0.5.dp,
     val shapeColor: Color = Color.Green.copy(alpha = 0.5F),
-)
+) {
+
+    companion object {
+
+        @Composable
+        fun surfaceBased(): KropConfig {
+
+            val handleColor = MaterialTheme.colorScheme.onSurface
+            val targetColor = MaterialTheme.colorScheme.surfaceTint
+            val borderColor = MaterialTheme.colorScheme.errorContainer
+            val overlayColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5F)
+
+            return KropConfig(
+                minimumCropSize = 100.dp,
+                handleColor = handleColor,
+                targetColor = targetColor,
+                borderColor = borderColor,
+                overlayColor = overlayColor
+            )
+        }
+    }
+}

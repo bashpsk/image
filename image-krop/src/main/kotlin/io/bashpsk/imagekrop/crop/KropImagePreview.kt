@@ -70,7 +70,7 @@ internal fun KropImagePreview(
     var isOriginalImage by rememberSaveable { mutableStateOf(value = false) }
 
     val selectedImage by remember(state) {
-        derivedStateOf { if (isOriginalImage) state.imageBitmap else state.modifiedImage }
+        derivedStateOf { if (isOriginalImage) state.originalImage else state.previewImage }
     }
 
     val titleCardColors = CardDefaults.cardColors(

@@ -1,5 +1,8 @@
 package io.bashpsk.imagekrop.crop
 
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
+
 /**
  * Represents the different shapes that can be used for cropping an image.
  *
@@ -66,4 +69,20 @@ enum class KropShape {
      * Represents a rounded corners.
      */
     RoundedCorner;
+
+    companion object {
+
+        val Basic = persistentListOf(
+            Star,
+            Circle,
+            CutCorner,
+            SharpeCorner,
+            Triangle,
+            Pentagon,
+            Hexagon,
+            RoundedCorner,
+        )
+
+        val Advanced = entries.toImmutableList()
+    }
 }

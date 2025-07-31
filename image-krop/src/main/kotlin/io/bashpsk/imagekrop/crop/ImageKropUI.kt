@@ -36,9 +36,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import kotlinx.coroutines.launch
 
 /**
@@ -63,13 +65,21 @@ internal fun ImageKropTopBar(
 
     val imagePreviewCoroutineScope = rememberCoroutineScope()
 
-    val isUndoImageBitmap by remember(state) { derivedStateOf { state.imageList.isNotEmpty() } }
+    val isUndoImageBitmap by remember(state.imageList) {
+        derivedStateOf { state.imageList.size > 1 }
+    }
 
     TopAppBar(
         modifier = modifier,
         navigationIcon = {
 
-            IconButton(onClick = onNavigateBack) {
+            IconButton(
+                onClick = {
+
+                    state.clearImages()
+                onNavigateBack()
+            }
+            ) {
 
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -86,7 +96,6 @@ internal fun ImageKropTopBar(
 
                     state.imageList.lastOrNull()?.let { bitmap ->
 
-                        state.updateModifiedImage(bitmap = bitmap)
                         state.removeLastImage()
                     }
                 }
@@ -120,7 +129,7 @@ internal fun ImageKropTopBar(
 
                             is KropResult.Success -> {
 
-                                state.updateModifiedImage(bitmap = kropResult.bitmap)
+                                state.updatePreviewImage(bitmap = kropResult.bitmap)
                                 imagePreviewSheetState.expand()
                             }
                         }
@@ -157,6 +166,7 @@ internal fun ImageKropTopBar(
                             is KropResult.Success -> {
 
                                 state.updateModifiedImage(bitmap = kropResult.bitmap)
+                                state.clearImages()
                                 onNavigateBack()
                             }
                         }
@@ -211,10 +221,7 @@ internal fun ImageKropBottomBar(
                     imagePreviewCoroutineScope.launch {
 
                         val kropResult = state.originalImage.getCroppedImageBitmap(
-                            cropRect = Rect(
-                                topLeft = state.topLeft,
-                                bottomRight = state.bottomRight
-                            ),
+                            cropRect = state.canvasSize.toSize().toRect(),
                             canvasSize = state.canvasSize,
                             imageFlip = KropImageFlip.Horizontal,
                             kropShape = state.kropShape
@@ -228,7 +235,8 @@ internal fun ImageKropBottomBar(
 
                             is KropResult.Success -> {
 
-                                state.updateModifiedImage(bitmap = kropResult.bitmap)
+                                state.updateOriginalImage(bitmap = kropResult.bitmap)
+                                state.addImage(bitmap = kropResult.bitmap)
                             }
                         }
                     }
@@ -247,10 +255,7 @@ internal fun ImageKropBottomBar(
                     imagePreviewCoroutineScope.launch {
 
                         val kropResult = state.originalImage.getCroppedImageBitmap(
-                            cropRect = Rect(
-                                topLeft = state.topLeft,
-                                bottomRight = state.bottomRight
-                            ),
+                            cropRect = state.canvasSize.toSize().toRect(),
                             canvasSize = state.canvasSize,
                             imageFlip = KropImageFlip.Vertical,
                             kropShape = state.kropShape
@@ -264,7 +269,8 @@ internal fun ImageKropBottomBar(
 
                             is KropResult.Success -> {
 
-                                state.updateModifiedImage(bitmap = kropResult.bitmap)
+                                state.updateOriginalImage(bitmap = kropResult.bitmap)
+                                state.addImage(bitmap = kropResult.bitmap)
                             }
                         }
                     }
@@ -319,7 +325,7 @@ internal fun ImageKropBottomBar(
                         }
                     )
 
-                    KropAspectRatio.entries.forEach { aspectRatio ->
+                    state.aspectList.forEach { aspectRatio ->
 
                         val isSelected by remember(state, aspectRatio) {
                             derivedStateOf { state.kropAspectRatio == aspectRatio }
@@ -333,7 +339,7 @@ internal fun ImageKropBottomBar(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .alpha(if (isSelected) 0.50F else 1.0F),
-                                    text = "${aspectRatio.width}:${aspectRatio.height}",
+                                    text = aspectRatio.label,
                                     textAlign = TextAlign.Center,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
