@@ -3,12 +3,14 @@ package io.bashpsk.imagekrop.crop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 
 @Composable
@@ -19,7 +21,13 @@ fun rememberImageKropState(
     aspectList: ImmutableList<KropAspectRatio> = KropAspectRatio.Basic
 ): ImageKropState {
 
-    return remember(imageBitmap, config, shapeList, aspectList) {
+    return rememberSaveable(
+        imageBitmap,
+        config,
+        shapeList,
+        aspectList,
+        saver = ImageKropState.StateSaver
+    ) {
         ImageKropState(
             imageBitmap = imageBitmap,
             config = config,
@@ -132,5 +140,87 @@ class ImageKropState(
 
             bitmapItem.sameAs(bitmap)
         }.takeIf { index -> index > 0 }
+    }
+    
+    companion object {
+
+        val StateSaver: Saver<ImageKropState, List<Any?>> = Saver(
+            save = { state ->
+
+                listOf(
+                    state.imageBitmap,
+                    state.config,
+                    state.shapeList,
+                    state.aspectList,
+                    state.originalImage,
+                    state.modifiedImage,
+                    state.previewImage,
+                    state.imageList,
+                    state.kropAspectRatio,
+                    state.isAspectLocked,
+                    state.kropShape,
+                    state.kropCorner,
+                    state.isMovingCropRect,
+                    state.canvasSize,
+                    state.topLeft,
+                    state.topRight,
+                    state.bottomLeft,
+                    state.bottomRight,
+                    state.isAspectRatioMenuExpanded,
+                    state.isShapeMenuExpanded
+                )
+            },
+            restore = { elements ->
+
+                val savedImageBitmap = elements[0] as ImageBitmap
+                val savedConfig = elements[1] as KropConfig
+                val savedShapeList = elements[2] as ImmutableList<KropShape>
+                val savedAspectList = elements[3] as ImmutableList<KropAspectRatio>
+                val savedOriginalImage = elements[4] as ImageBitmap
+                val savedModifiedImage = elements[5] as? ImageBitmap
+                val savedPreviewImage = elements[6] as? ImageBitmap
+
+                val savedImageList = (elements[7] as? PersistentList<ImageBitmap>)
+                    ?: persistentListOf(savedImageBitmap)
+
+                val savedKropAspectRatio = elements[8] as KropAspectRatio
+                val savedIsAspectLocked = elements[9] as Boolean
+                val savedKropShape = elements[10] as KropShape
+                val savedKropCorner = elements[11] as? KropCorner
+                val savedIsMovingCropRect = elements[12] as Boolean
+                val savedCanvasSize = elements[13] as IntSize
+                val savedTopLeft = elements[14] as Offset
+                val savedTopRight= elements[15] as Offset
+                val savedBottomLeft= elements[16] as Offset
+                val savedBottomRight= elements[17] as Offset
+                val savedIsAspectRatioMenuExpanded = elements[18] as Boolean
+                val savedIsShapeMenuExpanded = elements[19] as Boolean
+
+                ImageKropState(
+                    imageBitmap = savedImageBitmap,
+                    config = savedConfig,
+                    shapeList = savedShapeList,
+                    aspectList = savedAspectList
+                ).apply {
+
+                    originalImage = savedOriginalImage
+                    modifiedImage = savedModifiedImage
+                    previewImage = savedPreviewImage
+                    imageList = savedImageList
+                    kropAspectRatio = savedKropAspectRatio
+                    isAspectLocked = savedIsAspectLocked
+                    kropShape = savedKropShape
+                    kropCorner = savedKropCorner
+                    isMovingCropRect = savedIsMovingCropRect
+                    canvasSize = savedCanvasSize
+                    topLeft = savedTopLeft
+                    topRight = savedTopRight
+                    bottomLeft = savedBottomLeft
+                    bottomRight = savedBottomRight
+                    isAspectRatioMenuExpanded = savedIsAspectRatioMenuExpanded
+                    isShapeMenuExpanded = savedIsShapeMenuExpanded
+                }
+            }
+        )
     }
 }
