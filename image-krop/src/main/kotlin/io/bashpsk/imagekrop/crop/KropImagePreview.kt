@@ -101,6 +101,22 @@ internal fun KropImagePreview(
 
                 selectedImage?.let { bitmap ->
 
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+
+                        ImageCompareButton(
+                            isOriginalImage = isOriginalImage,
+                            onShowImageBitmap = { isVisible ->
+
+                                imageTransformState.resetAllValues()
+                                isOriginalImage = isVisible
+                            }
+                        )
+                    }
+
                     Box(
                         modifier = Modifier.wrapContentSize(),
                         contentAlignment = Alignment.TopCenter
@@ -141,22 +157,6 @@ internal fun KropImagePreview(
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-
-                        ImageCompareButton(
-                            isOriginalImage = isOriginalImage,
-                            onShowImageBitmap = { isVisible ->
-
-                                imageTransformState.resetAllValues()
-                                isOriginalImage = isVisible
-                            }
-                        )
                     }
                 } ?: Text(
                     modifier = Modifier

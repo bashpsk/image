@@ -101,6 +101,18 @@ enum class KropAspectRatio(val label: String, val ratio: Float? = null) {
 
     companion object {
 
+        /**
+         * A predefined list of commonly used aspect ratios.
+         *
+         * This list includes:
+         * - [Ratio1to1]
+         * - [Ratio3to4]
+         * - [Ratio4to3]
+         * - [Ratio9to16]
+         * - [Ratio9to20]
+         * - [Ratio16to9]
+         * - [Ratio20to9]
+         */
         val Basic = persistentListOf(
             Ratio1to1,
             Ratio3to4,
@@ -111,6 +123,10 @@ enum class KropAspectRatio(val label: String, val ratio: Float? = null) {
             Ratio20to9,
         ).toImmutableList()
 
+        /**
+         * An immutable list containing all predefined [KropAspectRatio] values.
+         * This list provides access to every available aspect ratio defined in this enum.
+         */
         val Advanced = entries.toImmutableList()
     }
 }

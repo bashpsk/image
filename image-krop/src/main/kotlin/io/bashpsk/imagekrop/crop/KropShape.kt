@@ -72,6 +72,11 @@ enum class KropShape {
 
     companion object {
 
+        /**
+         * A predefined list of basic shapes, suitable for common cropping scenarios.
+         * This list includes: [Star], [Circle], [CutCorner], [SharpeCorner], [Triangle],
+         * [Pentagon], [Hexagon], and [RoundedCorner].
+         */
         val Basic = persistentListOf(
             Star,
             Circle,
@@ -81,8 +86,12 @@ enum class KropShape {
             Pentagon,
             Hexagon,
             RoundedCorner,
-        )
+        ).toImmutableList()
 
+        /**
+         * An immutable list containing all the `KropShape` enum entries.
+         * This list provides a complete collection of all available cropping shapes.
+         */
         val Advanced = entries.toImmutableList()
     }
 }

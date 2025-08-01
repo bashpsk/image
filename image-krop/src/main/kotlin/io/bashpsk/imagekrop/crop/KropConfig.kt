@@ -45,6 +45,22 @@ data class KropConfig(
 
     companion object {
 
+        /**
+         * Creates a [KropConfig] instance with colors based on the current Material Theme's
+         * surface colors.
+         *
+         * This provides a pre-configured setup that adapts to the application's theme,
+         * ensuring visual consistency.
+         *
+         * Specifically, it sets:
+         * - `handleColor` to `MaterialTheme.colorScheme.onSurface`
+         * - `targetColor` to `MaterialTheme.colorScheme.surfaceTint`
+         * - `borderColor` to `MaterialTheme.colorScheme.errorContainer`
+         * - `overlayColor` to `MaterialTheme.colorScheme.surfaceVariant` with 50% alpha
+         * - `minimumCropSize` to 100.dp
+         *
+         * @return A [KropConfig] instance themed with surface-based colors.
+         */
         @Composable
         fun surfaceBased(): KropConfig {
 
