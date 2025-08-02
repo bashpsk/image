@@ -48,6 +48,7 @@ import kotlin.math.abs
 fun ImageKrop(
     modifier: Modifier = Modifier,
     state: ImageKropState,
+    onKropFinished: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
 
@@ -948,6 +949,7 @@ fun ImageKrop(
             modifier = Modifier.fillMaxWidth(),
             state = state,
             imagePreviewSheetState = imagePreviewSheetState,
+            onKropFinished = onKropFinished,
             onNavigateBack = onNavigateBack
         )
 

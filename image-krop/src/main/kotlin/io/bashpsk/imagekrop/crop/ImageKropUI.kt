@@ -60,6 +60,7 @@ internal fun ImageKropTopBar(
     modifier: Modifier = Modifier,
     state: ImageKropState,
     imagePreviewSheetState: SheetState,
+    onKropFinished: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
 
@@ -167,7 +168,7 @@ internal fun ImageKropTopBar(
 
                                 state.updateModifiedImage(bitmap = kropResult.bitmap)
                                 state.clearImages()
-                                onNavigateBack()
+                                onKropFinished()
                             }
                         }
                     }

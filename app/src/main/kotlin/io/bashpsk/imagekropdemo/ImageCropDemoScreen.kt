@@ -107,6 +107,23 @@ fun ImageCropDemoScreen() {
                     .fillMaxSize()
                     .safeDrawingPadding(),
                 state = imageKropState,
+                onKropFinished = {
+
+                    coroutineScope.launch(Dispatchers.IO) {
+
+                        imageKropState.modifiedImage?.saveAsFile(name = "PSK-Cropped").let { file ->
+
+                            launch(Dispatchers.Main) {
+
+                                Toast.makeText(
+                                    context,
+                                    if (file?.exists() == true) "Image Saved" else "Failed",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }
+                },
                 onNavigateBack = {
 
                     isImageEdit = false
@@ -135,29 +152,6 @@ fun ImageCropDemoScreen() {
                         imageModel = { bitmap.asAndroidBitmap() },
                         state = imageTransformState
                     )
-
-                    Button(
-                        onClick = {
-
-                            coroutineScope.launch(Dispatchers.IO) {
-
-                                bitmap.saveAsFile(name = "PSK-Cropped").let { file ->
-
-                                    launch(Dispatchers.Main) {
-
-                                        Toast.makeText(
-                                            context,
-                                            if (file?.exists() == true) "Image Saved" else "Failed",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                }
-                            }
-                        }
-                    ) {
-
-                        Text("Save Image")
-                    }
                 } ?: TransformImageView(
                     modifier = Modifier.weight(weight = 1.0F),
                     imageModel = { imageBitmap.asAndroidBitmap() },

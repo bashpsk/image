@@ -97,12 +97,13 @@ publishing {
 
         register<MavenPublication>("release") {
 
+            groupId = "io.bashpsk.image"
+            artifactId = "image-krop"
+            version = "1.0.0"
+
             afterEvaluate {
 
                 from(components["release"])
-                groupId = "io.bashpsk"
-                artifactId = "image-krop"
-                version = "1.0.0"
             }
         }
     }

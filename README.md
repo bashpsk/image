@@ -16,20 +16,20 @@ Add the JitPack repository to your root `build.gradle` (or `settings.gradle` for
 **Groovy DSL (`build.gradle`):**
 ```groovy
 dependencyResolutionManagement {
-   repositories {
-      // existing code
-      maven { url "https://jitpack.io" }
-   }
+    repositories {
+        // existing code
+        maven { url "https://jitpack.io" }
+    }
 }
 ```
 
 **Kotlin DSL (`settings.gradle.kts`):**
 ```kotlin
 dependencyResolutionManagement {
-   repositories {
-      // existing code
-      maven("https://jitpack.io")
-   }
+    repositories {
+        // existing code
+        maven("https://jitpack.io")
+    }
 }
 ```
 
@@ -40,8 +40,8 @@ Then, add the dependencies for the libraries you want to use in your module-leve
 ```groovy
 dependencies {
 
-   implementation 'com.github.bashpsk:image-kolor:1.0.0-beta01'
-   implementation 'com.github.bashpsk:image-krop:1.0.0-beta01'
+    implementation 'com.github.bashpsk.image:image-kolor:1.0.0-beta01'
+    implementation 'com.github.bashpsk.image:image-krop:1.0.0-beta01'
 }
 ```
 
@@ -49,8 +49,8 @@ dependencies {
 ```kotlin
 dependencies {
 
-   implementation("com.github.bashpsk:image-kolor:1.0.0-beta01")
-   implementation("com.github.bashpsk:image-krop:1.0.0-beta01")
+    implementation("com.github.bashpsk.image:image-kolor:1.0.0-beta01")
+    implementation("com.github.bashpsk.image:image-krop:1.0.0-beta01")
 }
 ```
 
@@ -111,11 +111,11 @@ dependencies {
 val kolorState = rememberImageKolorState(imageBitmap = imageBitmap)
 
 Column(
-   modifier = Modifier
-      .fillMaxSize()
-      .padding(paddingValues),
-   horizontalAlignment = Alignment.CenterHorizontally,
-   verticalArrangement = Arrangement.spacedBy(space = 4.dp)
+    modifier = Modifier
+        .fillMaxSize()
+        .padding(paddingValues),
+    horizontalAlignment = Alignment.CenterHorizontally,
+    verticalArrangement = Arrangement.spacedBy(space = 4.dp)
 ) {
 
     KolorImageView(
@@ -138,11 +138,11 @@ Column(
 val imageFilterState = rememberImageFilterState()
 
 Column(
-   modifier = Modifier
-      .fillMaxSize()
-      .padding(innerPadding),
-   verticalArrangement = Arrangement.spacedBy(space = 4.dp),
-   horizontalAlignment = Alignment.CenterHorizontally
+    modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding),
+    verticalArrangement = Arrangement.spacedBy(space = 4.dp),
+    horizontalAlignment = Alignment.CenterHorizontally
 ) {
 
     Image(
@@ -167,9 +167,9 @@ Column(
 val imageTransformState = rememberImageTransformState()
 
 TransformImageView(
-   modifier = Modifier.fillMaxWidth(),
-   imageModel = { R.drawable.empty_layer },
-   state = imageTransformState
+    modifier = Modifier.fillMaxWidth(),
+    imageModel = { R.drawable.empty_layer },
+    state = imageTransformState
 )
 ```
 
@@ -198,11 +198,12 @@ TransformImageView(
 val imageKropState = rememberImageKropState(imageBitmap = imageBitmap)
 
 ImageKrop(
-   modifier = Modifier
-      .fillMaxSize()
-      .safeDrawingPadding(),
-   state = imageKropState,
-   onNavigateBack = {}
+    modifier = Modifier
+        .fillMaxSize()
+        .safeDrawingPadding(),
+    state = imageKropState,
+    onKropFinished = {},
+    onNavigateBack = {}
 )
 ```
 ---
