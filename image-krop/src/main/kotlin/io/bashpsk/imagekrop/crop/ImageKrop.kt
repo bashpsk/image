@@ -92,6 +92,18 @@ fun ImageKrop(
         derivedStateOf { state.config.minimumCropSize.toPixel(density = density) }
     }
 
+    val imagePlacedModifier = Modifier.onPlaced { layoutCoordinates ->
+
+        val imageWidth = layoutCoordinates.size.width.toFloat()
+        val imageHeight = layoutCoordinates.size.height.toFloat()
+
+        state.topLeft = Offset(imageWidth * 0.05F, imageHeight * 0.05F)
+        state.topRight = Offset(imageWidth * 0.95F, imageHeight * 0.05F)
+        state.bottomLeft = Offset(imageWidth * 0.05F, imageHeight * 0.95F)
+        state.bottomRight = Offset(imageWidth * 0.95F, imageHeight * 0.95F)
+        state.canvasSize = layoutCoordinates.size
+    }
+
     val pointerInputWithoutAspect = Modifier.pointerInput(Unit) {
 
         detectDragGestures(
@@ -960,17 +972,7 @@ fun ImageKrop(
 
             Image(
                 modifier = Modifier
-                    .onPlaced { layoutCoordinates ->
-
-                        val imageWidth = layoutCoordinates.size.width.toFloat()
-                        val imageHeight = layoutCoordinates.size.height.toFloat()
-
-                        state.topLeft = Offset(imageWidth * 0.05F, imageHeight * 0.05F)
-                        state.topRight = Offset(imageWidth * 0.95F, imageHeight * 0.05F)
-                        state.bottomLeft = Offset(imageWidth * 0.05F, imageHeight * 0.95F)
-                        state.bottomRight = Offset(imageWidth * 0.95F, imageHeight * 0.95F)
-                        state.canvasSize = layoutCoordinates.size
-                    }
+                    .then(imagePlacedModifier)
                     .then(pointerInputModifier)
                     .then(cropCanvasModifier),
                 bitmap = state.originalImage,

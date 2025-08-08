@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -105,13 +104,13 @@ fun ImageCropDemoScreen() {
             ImageKrop(
                 modifier = Modifier
                     .fillMaxSize()
-                    .safeDrawingPadding(),
+                    .padding(innerPadding),
                 state = imageKropState,
                 onKropFinished = {
 
                     coroutineScope.launch(Dispatchers.IO) {
 
-                        imageKropState.modifiedImage?.saveAsFile(name = "PSK-Cropped").let { file ->
+                        imageKropState.modifiedImage?.saveAsFile("PSK-Cropped").let { file ->
 
                             launch(Dispatchers.Main) {
 

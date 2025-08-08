@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -180,7 +181,8 @@ internal fun ImageKropTopBar(
                     contentDescription = "Image Crop Done"
                 )
             }
-        }
+        },
+        windowInsets = WindowInsets(left = 0, top = 0, right = 0, bottom = 0)
     )
 }
 
@@ -206,7 +208,10 @@ internal fun ImageKropBottomBar(
         derivedStateOf { if (state.isAspectLocked) Icons.Filled.Lock else Icons.Filled.LockOpen }
     }
 
-    BottomAppBar(modifier = modifier) {
+    BottomAppBar(
+        modifier = modifier,
+        windowInsets = WindowInsets(left = 0, top = 0, right = 0, bottom = 0)
+    ) {
 
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
