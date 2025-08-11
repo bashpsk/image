@@ -29,7 +29,11 @@ fun rememberImageTransformState(
 ): ImageTransformState {
 
     return rememberSaveable(zoomRange, config, saver = ImageTransformState.StateSaver) {
-        ImageTransformState(zoomRange = zoomRange, config = config)
+        ImageTransformState(
+            zoomMin = zoomRange.start,
+            zoomMax = zoomRange.endInclusive,
+            config = config
+        )
     }
 }
 
@@ -39,11 +43,12 @@ fun rememberImageTransformState(
  * This class holds the current zoom, rotation, and position of the image.
  * It provides methods to update these values and reset them to their defaults.
  *
- * @param zoomRange The allowable range for zoom values.
+ * @param zoomMin The allowable range for zoom values.
  * @param config The configuration for image transformations.
  */
 class ImageTransformState(
-    val zoomRange: ClosedFloatingPointRange<Float>,
+    val zoomMin: Float,
+    val zoomMax: Float,
     val config: TransformImageConfig
 ) {
 
@@ -109,7 +114,8 @@ class ImageTransformState(
             save = { state ->
 
                 listOf(
-                    state.zoomRange,
+                    state.zoomMin,
+                    state.zoomMax,
                     state.config,
                     state.zoom,
                     state.rotation,
@@ -118,18 +124,19 @@ class ImageTransformState(
             },
             restore = { elements ->
 
-                val savedZoomRange = elements.getOrNull(0) as? ClosedFloatingPointRange<Float>
-                    ?: 0.4F..8.0F
+                val savedZoomMin = elements.getOrNull(0) as? Float ?: 0.4F
+                val savedZoomMax = elements.getOrNull(1) as? Float ?: 8.0F
 
-                val savedConfig = elements.getOrNull(1) as? TransformImageConfig
+                val savedConfig = elements.getOrNull(2) as? TransformImageConfig
                     ?: TransformImageConfig()
 
-                val savedZoom = elements.getOrNull(2) as? Float ?: 1.0F
-                val savedRotation = elements.getOrNull(3) as? Int ?: 0
-                val savedPosition = elements.getOrNull(4) as? Offset ?: Offset.Zero
+                val savedZoom = elements.getOrNull(3) as? Float ?: 1.0F
+                val savedRotation = elements.getOrNull(4) as? Int ?: 0
+                val savedPosition = elements.getOrNull(5) as? Offset ?: Offset.Zero
 
                 ImageTransformState(
-                    zoomRange = savedZoomRange,
+                    zoomMin = savedZoomMin,
+                    zoomMax = savedZoomMax,
                     config = savedConfig
                 ).apply {
 
