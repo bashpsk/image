@@ -40,8 +40,8 @@ Then, add the dependencies for the libraries you want to use in your module-leve
 ```groovy
 dependencies {
 
-    implementation 'com.github.bashpsk.image:image-kolor:1.0.0-beta03'
-    implementation 'com.github.bashpsk.image:image-krop:1.0.0-beta03'
+    implementation 'com.github.bashpsk.image:image-kolor:1.0.0-beta04'
+    implementation 'com.github.bashpsk.image:image-krop:1.0.0-beta04'
 }
 ```
 
@@ -49,8 +49,8 @@ dependencies {
 ```kotlin
 dependencies {
 
-    implementation("com.github.bashpsk.image:image-kolor:1.0.0-beta03")
-    implementation("com.github.bashpsk.image:image-krop:1.0.0-beta03")
+    implementation("com.github.bashpsk.image:image-kolor:1.0.0-beta04")
+    implementation("com.github.bashpsk.image:image-krop:1.0.0-beta04")
 }
 ```
 
