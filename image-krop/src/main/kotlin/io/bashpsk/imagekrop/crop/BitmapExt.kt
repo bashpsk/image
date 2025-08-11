@@ -84,7 +84,7 @@ private const val MIN_CROP_DIMENSION_PX = 1
  *   - [KropResult.Failed] containing an error message and the original [ImageBitmap] if any error
  *   occurs during the process (e.g., invalid dimensions, out of memory).
  */
-suspend fun ImageBitmap.getCroppedImageBitmap(
+internal suspend fun ImageBitmap.getCroppedImageBitmap(
     cropRect: Rect,
     canvasSize: IntSize,
     imageFlip: KropImageFlip? = null,
@@ -291,7 +291,7 @@ private fun transformToBitmapCoordinate(
  * @param kropShape The [KropShape] to use as the mask.
  * @return A new [ImageBitmap] with the shape mask applied.
  */
-fun bitmapShapeMask(imageBitmap: ImageBitmap, kropShape: KropShape): ImageBitmap {
+private fun bitmapShapeMask(imageBitmap: ImageBitmap, kropShape: KropShape): ImageBitmap {
 
     val width = imageBitmap.width
     val height = imageBitmap.height

@@ -36,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -114,14 +113,7 @@ internal fun ImageKropTopBar(
 
                     imagePreviewCoroutineScope.launch {
 
-                        val kropResult = state.originalImage.getCroppedImageBitmap(
-                            cropRect = Rect(
-                                topLeft = state.topLeft,
-                                bottomRight = state.bottomRight
-                            ),
-                            canvasSize = state.canvasSize,
-                            kropShape = state.kropShape
-                        )
+                        val kropResult = state.getCroppedImageBitmap()
 
                         when (kropResult) {
 
@@ -150,14 +142,7 @@ internal fun ImageKropTopBar(
 
                     imagePreviewCoroutineScope.launch {
 
-                        val kropResult = state.originalImage.getCroppedImageBitmap(
-                            cropRect = Rect(
-                                topLeft = state.topLeft,
-                                bottomRight = state.bottomRight
-                            ),
-                            canvasSize = state.canvasSize,
-                            kropShape = state.kropShape
-                        )
+                        val kropResult = state.getCroppedImageBitmap()
 
                         when (kropResult) {
 
@@ -226,11 +211,9 @@ internal fun ImageKropBottomBar(
 
                     imagePreviewCoroutineScope.launch {
 
-                        val kropResult = state.originalImage.getCroppedImageBitmap(
-                            cropRect = state.canvasSize.toSize().toRect(),
-                            canvasSize = state.canvasSize,
-                            imageFlip = KropImageFlip.Horizontal,
-                            kropShape = state.kropShape
+                        val kropResult = state.getCroppedImageBitmap(
+                            imageRect = state.canvasSize.toSize().toRect(),
+                            imageFlip = KropImageFlip.Horizontal
                         )
 
                         when (kropResult) {
@@ -260,11 +243,9 @@ internal fun ImageKropBottomBar(
 
                     imagePreviewCoroutineScope.launch {
 
-                        val kropResult = state.originalImage.getCroppedImageBitmap(
-                            cropRect = state.canvasSize.toSize().toRect(),
-                            canvasSize = state.canvasSize,
-                            imageFlip = KropImageFlip.Vertical,
-                            kropShape = state.kropShape
+                        val kropResult = state.getCroppedImageBitmap(
+                            imageRect = state.canvasSize.toSize().toRect(),
+                            imageFlip = KropImageFlip.Vertical
                         )
 
                         when (kropResult) {

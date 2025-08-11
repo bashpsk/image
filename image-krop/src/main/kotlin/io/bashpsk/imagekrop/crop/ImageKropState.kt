@@ -7,6 +7,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import kotlinx.collections.immutable.ImmutableList
@@ -312,7 +313,38 @@ class ImageKropState(
             bitmapItem.sameAs(bitmap)
         }.takeIf { index -> index > 0 }
     }
-    
+
+    /**
+     * Crops the original image based on the provided parameters.
+     *
+     * This function takes a crop rectangle, canvas size, optional image flip, and image shape
+     * to produce a cropped version of the `originalImage`.
+     *
+     * @param imageRect The [Rect] defining the area to crop from the original image.
+     * @param imageCanvasSize The [IntSize] of the canvas on which the image is displayed.
+     * This is used for scaling calculations.
+     * @param imageFlip An optional [KropImageFlip] value to flip the image horizontally or
+     * vertically before cropping. Defaults to null (no flip).
+     * @param imageShape The [KropShape] to apply to the cropped image. Defaults to
+     * [KropShape.SharpeCorner].
+     * @return A [KropResult] object which can be either [KropResult.Success] containing the
+     * cropped [ImageBitmap] or [KropResult.Failed] if an error occurred during cropping.
+     */
+    internal suspend fun getCroppedImageBitmap(
+        imageRect: Rect? = null,
+        imageCanvasSize: IntSize? = null,
+        imageFlip: KropImageFlip? = null,
+        imageShape: KropShape? = null
+    ): KropResult {
+
+        return originalImage.getCroppedImageBitmap(
+            cropRect = imageRect ?: Rect(topLeft = topLeft, bottomRight = bottomRight),
+            canvasSize = imageCanvasSize ?: canvasSize,
+            imageFlip = imageFlip,
+            kropShape = imageShape ?: kropShape
+        )
+    }
+
     companion object {
 
         val StateSaver: Saver<ImageKropState, List<Any?>> = Saver(
@@ -361,9 +393,9 @@ class ImageKropState(
                 val savedIsMovingCropRect = elements[12] as Boolean
                 val savedCanvasSize = elements[13] as IntSize
                 val savedTopLeft = elements[14] as Offset
-                val savedTopRight= elements[15] as Offset
-                val savedBottomLeft= elements[16] as Offset
-                val savedBottomRight= elements[17] as Offset
+                val savedTopRight = elements[15] as Offset
+                val savedBottomLeft = elements[16] as Offset
+                val savedBottomRight = elements[17] as Offset
                 val savedIsAspectRatioMenuExpanded = elements[18] as Boolean
                 val savedIsShapeMenuExpanded = elements[19] as Boolean
 
