@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.round
  * @param filter The type of image filter to apply.
  * @return A new ImageBitmap with the color filter applied.
  */
-fun ImageBitmap.getKolorFilterBitmap(filter: ImageFilterType): ImageBitmap {
+internal fun ImageBitmap.getKolorFilterBitmap(filter: ImageFilterType): ImageBitmap {
 
     return getKolorFilterBitmap(filter = filter.colorFilter)
 }
@@ -25,9 +25,9 @@ fun ImageBitmap.getKolorFilterBitmap(filter: ImageFilterType): ImageBitmap {
  * @param filter The [ColorFilter] to apply to the image.
  * @return A new [ImageBitmap] with the specified [ColorFilter] applied.
  */
-fun ImageBitmap.getKolorFilterBitmap(filter: ColorFilter): ImageBitmap {
+internal fun ImageBitmap.getKolorFilterBitmap(filter: ColorFilter): ImageBitmap {
 
-    val sourceImage=this@getKolorFilterBitmap
+    val sourceImage = this@getKolorFilterBitmap
 
     val imageBitmap = ImageBitmap(
         width = sourceImage.width,

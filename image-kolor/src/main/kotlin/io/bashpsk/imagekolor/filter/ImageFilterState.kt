@@ -32,16 +32,46 @@ fun rememberImageFilterState(previewImage: ImageBitmap? = null): ImageFilterStat
 /**
  * Represents the state of the image filter, including the preview image and the selected filter.
  *
- * @param previewImage The image to be displayed and filtered.
+ * @param previewImage The image to be displayed and filtered image preview.
  */
 @Stable
 class ImageFilterState(val previewImage: ImageBitmap?) {
 
+    /**
+     * The currently selected image filter.
+     *
+     * This property holds the [ImageFilterType] that is currently applied to the image.
+     * It is a mutable state, meaning that changes to this property will trigger recomposition
+     * in composables that observe it.
+     *
+     * The `private set` modifier restricts modifications to this property from outside the
+     * [ImageFilterState] class, ensuring that changes are made through the `onSelectFilter`
+     * method.
+     */
     var selectedFilter by mutableStateOf(ImageFilterType.Original)
         private set
 
+    /**
+     * Updates the currently selected image filter.
+     *
+     * This function is called when the user selects a new filter from the available options.
+     *
+     * @param filter The [ImageFilterType] to be applied to the image.
+     */
     fun onSelectFilter(filter: ImageFilterType) {
+
         selectedFilter = filter
+    }
+
+    /**
+     * Applies the currently selected filter to the given image and returns the filtered image.
+     *
+     * @param image The [ImageBitmap] to which the filter will be applied.
+     * @return The filtered [ImageBitmap].
+     */
+    fun getFilterImage(image: ImageBitmap): ImageBitmap {
+
+        return image.getKolorFilterBitmap(filter = selectedFilter)
     }
 
     companion object {

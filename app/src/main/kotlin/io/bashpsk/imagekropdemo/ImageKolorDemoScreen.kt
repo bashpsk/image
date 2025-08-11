@@ -29,7 +29,6 @@ import io.bashpsk.imagekolor.color.ImageKolorConfig
 import io.bashpsk.imagekolor.color.KolorAdjustmentSliders
 import io.bashpsk.imagekolor.color.KolorImageView
 import io.bashpsk.imagekolor.color.rememberImageKolorState
-import io.bashpsk.imagekolor.filter.getKolorFilterBitmap
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,9 +58,9 @@ fun ImageKolorDemoScreen() {
 
                             bitmapCoroutineScope.launch {
 
-                                imageBitmap.getKolorFilterBitmap(
-                                    filter = kolorState.getColorFilter()
-                                ).saveAsFile(name = "PSK-Custom-Colored").let { file ->
+                                kolorState.getColorImage()?.saveAsFile(
+                                    name = "PSK-Custom-Colored"
+                                ).let { file ->
 
                                     Toast.makeText(
                                         context,

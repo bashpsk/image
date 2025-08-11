@@ -26,7 +26,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
 import io.bashpsk.imagekolor.filter.ImageFilter
-import io.bashpsk.imagekolor.filter.getKolorFilterBitmap
 import io.bashpsk.imagekolor.filter.rememberImageFilterState
 import kotlinx.coroutines.launch
 
@@ -56,8 +55,8 @@ fun ImageFilterDemoScreen() {
 
                             bitmapCoroutineScope.launch {
 
-                                imageBitmap.getKolorFilterBitmap(
-                                    filter = imageFilterState.selectedFilter
+                                imageFilterState.getFilterImage(
+                                    imageBitmap
                                 ).saveAsFile(name = "PSK-Colored").let { file ->
 
                                     Toast.makeText(

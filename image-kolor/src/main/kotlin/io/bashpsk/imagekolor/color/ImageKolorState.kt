@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ImageBitmap
+import io.bashpsk.imagekolor.filter.getKolorFilterBitmap
 import kotlin.math.pow
 
 /**
@@ -239,6 +240,22 @@ class ImageKolorState(val imageBitmap: ImageBitmap?, val config: ImageKolorConfi
     fun getColorFilter(): ColorFilter {
 
         return ColorFilter.colorMatrix(colorMatrix = getColorMatrix())
+    }
+
+    /**
+     * Applies the current color adjustments to the [imageBitmap] and returns the resulting
+     * [ImageBitmap].
+     *
+     * This function first retrieves the [ColorFilter] based on the current state of color
+     * adjustments using [getColorFilter]. It then applies this filter to the original
+     * [imageBitmap] using the `getKolorFilterBitmap` extension function.
+     *
+     * @return A new [ImageBitmap] with the color adjustments applied, or `null` if the
+     * original [imageBitmap] is `null`.
+     */
+    fun getColorImage(): ImageBitmap? {
+
+        return imageBitmap?.getKolorFilterBitmap(filter = getColorFilter())
     }
 
     /**

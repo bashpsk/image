@@ -243,6 +243,10 @@ fun AdjustmentSlider(
         }
     }
 
+    val sliderColors = SliderDefaults.colors(
+        thumbColor = MaterialTheme.colorScheme.inversePrimary
+    )
+
     if (enabled) {
 
         Column(
@@ -263,6 +267,7 @@ fun AdjustmentSlider(
                 value = value,
                 onValueChange = onValueChange,
                 valueRange = valueRange,
+                colors = sliderColors,
                 thumb = { sliderState ->
 
                     SliderDefaults.Thumb(
@@ -270,7 +275,16 @@ fun AdjustmentSlider(
                         thumbSize = DpSize(
                             ButtonDefaults.IconSize,
                             ButtonDefaults.IconSize
-                        )
+                        ),
+                        colors = sliderColors
+                    )
+                },
+                track = { sliderState ->
+
+                    SliderDefaults.Track(
+                        sliderState = sliderState,
+                        colors = sliderColors,
+                        thumbTrackGapSize = 0.dp
                     )
                 }
             )
